@@ -53,7 +53,7 @@ printf("Thread %d sees final value %d\n", which, val);
 // 	Set up a ping-pong between two threads, by forking a thread 
 //	to call SimpleThread, and then calling SimpleThread ourselves.
 //----------------------------------------------------------------------
-
+/*
 void
 ThreadTest1()
 {
@@ -82,7 +82,7 @@ ThreadTest()
 	break;
     }
 }
-
+*/
 void 
 Threadtest(int n)
 {
