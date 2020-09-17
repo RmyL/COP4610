@@ -11,10 +11,11 @@
 
 #include "copyright.h"
 #include "system.h"
+#include "synch.h"
 
 // testnum is set in main.cc
 int testnum = 1;
-
+int numThreads=0 ;
 //----------------------------------------------------------------------
 // SimpleThread
 // 	Loop 5 times, yielding the CPU to another ready thread 
@@ -23,28 +24,55 @@ int testnum = 1;
 //	"which" is simply a number identifying the thread, for debugging
 //	purposes.
 //----------------------------------------------------------------------
-#if defined (HW1_SEMAPHORES)
-Semaphore *lock;
-#endif
+
+
+// #if defined(HW1_SEMAPHORES)
+Semaphore * lock;
+Semaphore * endLock ;
+// #endif
+
 
 int SharedVariable;
 void SimpleThread(int which) {
-int num, val;
+    int num, val;
 
-for(num = 0; num < 5; num++) {
+    
+    for(num = 0; num < 5; num++) {
+        #if defined(HW1_SEMAPHORES)
+        lock->P();
+        #endif       
+        
+        val = SharedVariable;
+        printf("*** thread %d sees value %d\n", which, val);
+        currentThread->Yield();
+        
+        SharedVariable = val+1;
+        
+        #if defined(HW1_SEMAPHORES)
+        lock->V();
+        #endif
+        
+        currentThread->Yield();
+    }
+    
+    #if defined(HW1_SEMAPHORES)
+    if (which == numThreads)
+         lock->V();
+    
+    lock->P();
+    #endif
+    
+    val = SharedVariable;
+    printf("Thread %d sees final value %d\n", which, val);
+    
+    #if defined(HW1_SEMAPHORES)
+    lock->V();
+    lock = new Semaphore("endlock", 0);
+    #endif
 
-val = SharedVariable;
-printf("*** thread %d sees value %d\n", which, val);
-currentThread->Yield();
-
-SharedVariable = val+1;
-
-currentThread->Yield();
 }
 
-val = SharedVariable;
-printf("Thread %d sees final value %d\n", which, val);
-}
+
 
 
 
@@ -84,14 +112,18 @@ ThreadTest()
 }
 */
 void 
-Threadtest(int n)
+ThreadTest(int n)
 {
+#if defined(HW1_SEMAPHORES)
+	lock = new Semaphore("lock", 1);
+#endif
+
     Thread *t[n];
     int i;
     for (i=0;i<n;i++)
     {
         t[1] = new Thread("forked thread");
-        t[1]->Fork(SimpleThred, i+1);
+        t[1]->Fork(SimpleThread, i+1);
         numThreads++;
     }
     SimpleThread(0);
