@@ -16,6 +16,7 @@
 // testnum is set in main.cc
 int testnum = 1;
 int numThreads=0 ;
+
 //----------------------------------------------------------------------
 // SimpleThread
 // 	Loop 5 times, yielding the CPU to another ready thread 
@@ -26,10 +27,9 @@ int numThreads=0 ;
 //----------------------------------------------------------------------
 
 
-// #if defined(HW1_SEMAPHORES)
+ #if defined(HW1_SEMAPHORES)
 Semaphore * lock;
-Semaphore * endLock ;
-// #endif
+ #endif
 
 
 int SharedVariable;
@@ -56,9 +56,11 @@ void SimpleThread(int which) {
     }
     
     #if defined(HW1_SEMAPHORES)
-    if (which == numThreads)
-         lock->V();
-    
+       if(which ==numThreads)
+    {
+    	lock->V();
+    	lock->P();
+    }    
     lock->P();
     #endif
     
@@ -66,10 +68,8 @@ void SimpleThread(int which) {
     printf("Thread %d sees final value %d\n", which, val);
     
     #if defined(HW1_SEMAPHORES)
-    lock->V();
-    lock = new Semaphore("endlock", 0);
+    	lock->V();
     #endif
-
 }
 
 
