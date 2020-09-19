@@ -100,10 +100,58 @@ Semaphore::V()
 // Dummy functions -- so we can compile our later assignments 
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
-Lock::Lock(const char* debugName) {}
-Lock::~Lock() {}
-void Lock::Acquire() {}
-void Lock::Release() {}
+
+//----------------------------------------------------------------------
+// Lock::Lock
+//      Initialize a lock, so that it can be used for synchronization.
+//      Initially, unlocked.
+//
+//      "debugName" is an arbitrary name, useful for debugging.
+//----------------------------------------------------------------------
+Lock::Lock(const char* debugName) 
+{
+    name = debugName;
+    semaphore = new Semaphore("lock", 1);  // initially, unlocked
+    lockHolder = NULL;
+}
+
+//----------------------------------------------------------------------
+// Lock::~Lock
+//      Deallocate a lock
+//----------------------------------------------------------------------
+Lock::~Lock() 
+{
+    delete semaphore;	
+}
+
+//----------------------------------------------------------------------
+// Lock::Acquire
+//      Atomically wait until the lock is free, then set it to busy.
+//      Equivalent to Semaphore::P(), with the semaphore value of 0
+//      equal to busy, and semaphore value of 1 equal to free.
+//----------------------------------------------------------------------
+void Lock::Acquire() 
+{
+    semaphore->P();
+    lockHolder = kernel->currentThread;	
+}
+
+//----------------------------------------------------------------------
+// Lock::Release
+//      Atomically set lock to be free, waking up a thread waiting
+//      for the lock, if any.
+//      Equivalent to Semaphore::V(), with the semaphore value of 0
+//      equal to busy, and semaphore value of 1 equal to free.
+//
+//      By convention, only the thread that acquired the lock
+//      may release it.
+//---------------------------------------------------------------------
+void Lock::Release() 
+{
+    ASSERT(IsHeldByCurrentThread());
+    lockHolder = NULL;
+    semaphore->V();	
+}
 
 Condition::Condition(const char* debugName) { }
 Condition::~Condition() { }
