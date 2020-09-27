@@ -153,8 +153,57 @@ void Lock::Release()
     semaphore->V();	
 }
 
-Condition::Condition(const char* debugName) { }
-Condition::~Condition() { }
-void Condition::Wait(Lock* conditionLock) { ASSERT(FALSE); }
-void Condition::Signal(Lock* conditionLock) { }
-void Condition::Broadcast(Lock* conditionLock) { }
+Condition::Condition(const char* debugName)
+{
+    name = debugName;
+    queue = new List;
+    lock = NULL;
+}
+
+Condition::~Condition()
+{
+    delete queue;
+}
+
+void Condition::Wait(Lock* conditionLock)
+{
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    ASSERT(conditionLock->isHeldByCurrentThread());
+    if (queue->IsEmpty()) {
+        lock = conditionLock;
+    }
+
+    ASSERT(lock==conditionLock);
+    queue->Append(currentThread);
+    conditionLock->Release();
+    currentThread->Sleep();
+    conditionLock->Acquire();
+    (void) interrupt->SetLevel(oldLevel);
+}
+
+void Condition::Signal(Lock* conditionLock)
+{
+    Thread *nextThread;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    if(!queue->IsEmpty()){
+        ASSERT(lock == conditionLock);
+        nextThread = (Thread *)queue->Remove();
+        scheduler->ReadyToRun(nextThread);
+    }
+    (void) interrupt->SetLevel(oldLevel);
+}
+
+void Condition::Broadcast(Lock* conditionLock)
+{
+    Thread *nextThread;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    ASSERT(conditionLock->isHeldByCurrentThread());
+    if(!queue->IsEmpty()) {
+        ASSERT(lock == conditionLock);
+        while (nextThread = (Thread *)queue->Remove()){
+            scheduler->ReadyToRun(nextThread);
+        }
+    }
+    (void) interrupt->SetLevel(oldLevel);
+}
