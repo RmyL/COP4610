@@ -128,4 +128,53 @@ ThreadTest(int n)
     }
     SimpleThread(0);
 }
+//Elevator
+#define ELEVATOR_CAPACITY 5
+
+
+
+struct PersonThread
+{
+    int id;
+    int atFloor;
+    int toFloor;
+};
+
+struct ElevatorThread
+{
+    int numFloors;
+    int currentFloor;
+    int numPeopleIn;
+    bool direction; //1 for up; 0 for down
+};
+
+
+void run_elevator()
+{
+    do
+    {
+
+
+    if (ElevatorThread.numFloors <= ElevatorThread.currentFloor)
+        ElevatorThread.direction=1;
+    else
+        ElevatorThread.direction=0;
+    
+    //Test if elevator is full
+
+    //if not Take new person
+
+    //Check if person thread needs to leave elevator
+
+    //Elevator moves
+
+    
+
+	
+    }
+    while(1);
+
+}
+
+
 
