@@ -58,7 +58,7 @@ extern int testnum;
 #endif
 
 // External functions used by this file
-
+extern void Elevator(int numFloors);
 extern void ThreadTest(int), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
@@ -79,27 +79,31 @@ extern void MailTest(int networkID);
 //----------------------------------------------------------------------
 
 int
-main(int argc, char **argv)
+main(int argc, char** argv)
 {
-    int argCount;			// the number of arguments 
+	int argCount;			// the number of arguments 
 					// for a particular command
 
-    DEBUG('t', "Entering main");
-    (void) Initialize(argc, argv);
-    
+	DEBUG('t', "Entering main");
+	(void)Initialize(argc, argv);
+
 #ifdef THREADS
-    for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
-      argCount = 1;
-      switch (argv[0][1]) {
-      case 'q':
-        testnum = atoi(argv[1]);
-        argCount++;
-        break;
-      default:
-        testnum = 1;
-        break;
-      }
-    }
+	for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
+		argCount = 1;
+		switch (argv[0][1]) {
+		case 'q':
+			testnum = atoi(argv[1]);
+			argCount++;
+			break;
+		default:
+			testnum = 1;
+			break;
+		}
+	}
+
+	if (HW1_ELEVATOR) {
+		Elevator(10);
+	}
 
     ThreadTest();
 #endif
