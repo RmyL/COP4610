@@ -148,6 +148,27 @@ struct ElevatorThread
     bool direction; //1 for up; 0 for down
 };
 
+void Elevator(int numFloors)
+{
+    ElevatorThread e = new ElevatorThread;
+    e->numFloors = numFloors;
+    e->currentFloor = 0;
+    e->numPeopleIn = 0;
+    e->direction = 1;
+    e->Fork(run_elevator);
+}
+
+int nextID=0;
+void ArrivingGoingFromTo(int atFloor, int toFloor)
+{
+
+    PersonThread *p = new PersonThread;
+    p->atFloor = atFloor;
+    p->toFloor = toFloor;
+    p->id = nextID++;
+
+}
+
 
 void run_elevator()
 {
