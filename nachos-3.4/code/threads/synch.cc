@@ -112,17 +112,17 @@ Lock::~Lock() {
 
 
 void Lock::Acquire() {
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     sempahore->P();
     lockholder = currentThread;
 
-    //(void)interrupt->SetLevel(oldLevel);
+    (void)interrupt->SetLevel(oldLevel);
 }
 
 
 void Lock::Release() {
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     //assert only the holder thread can release the lock
     ASSERT(isHeldByCurrentThread());
@@ -130,7 +130,7 @@ void Lock::Release() {
     lockholder = NULL;
     sempahore->V();
 
-    //(void)interrupt->SetLevel(oldLevel);
+    (void)interrupt->SetLevel(oldLevel);
 }
 
 bool Lock::isHeldByCurrentThread()
@@ -150,7 +150,7 @@ Condition::~Condition() {
 
 
 void Condition::Wait(Lock* conditionLock) { 
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     ASSERT(conditionLock->isHeldByCurrentThread());
 
@@ -159,12 +159,12 @@ void Condition::Wait(Lock* conditionLock) {
 
     conditionLock->Acquire();
 
-    //(void)interrupt->SetLevel(oldLevel);
+    (void)interrupt->SetLevel(oldLevel);
 }
 
 
 void Condition::Signal(Lock* conditionLock) {
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     ASSERT(conditionLock->isHeldByCurrentThread());
 
@@ -173,12 +173,12 @@ void Condition::Signal(Lock* conditionLock) {
         scheduler->ReadyToRun(waitingThread);
     }
 
-    //(void)interrupt->SetLevel(oldLevel);
+    (void)interrupt->SetLevel(oldLevel);
 }
 
 
 void Condition::Broadcast(Lock* conditionLock) {
-    //IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     ASSERT(conditionLock->isHeldByCurrentThread());
 
@@ -186,5 +186,5 @@ void Condition::Broadcast(Lock* conditionLock) {
         Signal(conditionLock);
     }
 
-    //(void)interrupt->SetLevel(oldLevel);
+    (void)interrupt->SetLevel(oldLevel);
 }
