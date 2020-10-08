@@ -132,13 +132,13 @@ ThreadTest(int n)
 #define ELEVATOR_CAPACITY 5
 
 
-
 struct PersonThread
 {
     int id;
     int atFloor;
     int toFloor;
 };
+
 
 struct ElevatorThread
 {
@@ -148,54 +148,69 @@ struct ElevatorThread
     bool direction; //1 for up; 0 for down
 };
 
+
 void Elevator(int numFloors)
 {
     ElevatorThread e = new ElevatorThread;
     e->numFloors = numFloors;
-    e->currentFloor = 0;
+    e->currentFloor = 1; //1 is ground floor
     e->numPeopleIn = 0;
     e->direction = 1;
-    e->Fork(run_elevator);
+    e->Fork(run_elevator(e));
 }
 
-int nextID=0;
+int nextID = 0;
 void ArrivingGoingFromTo(int atFloor, int toFloor)
 {
+    
+    for(int i = 0; i < 50; i++)
+    {
+        // 50 ticks between floors
+    }
+    
+    printf("Elevator arrives on floor %d", atFloor);
 
-    PersonThread *p = new PersonThread;
-    p->atFloor = atFloor;
-    p->toFloor = toFloor;
-    p->id = nextID++;
+    if(nextID <= 5){
+        PersonThread *p = new PersonThread;
+        p->atFloor = atFloor;
+        p->toFloor = toFloor;
+        p->id = nextID++;
+    } 
+    else {
+        printf("Elevator is too full! There are %d people in the elevator.", nextID);
 
+    }
+
+    printf("Person" + p->id + "wants to go to floor" + p->atFloor + "from floor" + p->toFloor)
 }
 
 
-void run_elevator()
+void run_elevator(ElevatorThread e)
 {
+    
     do
     {
-
-
-    if (ElevatorThread.numFloors <= ElevatorThread.currentFloor)
-        ElevatorThread.direction=1;
-    else
-        ElevatorThread.direction=0;
+        if (e.numFloors <= e.currentFloor) 
+        {
+            printf("direction = 1");
+            e.direction = 1;
+        }
+        else 
+        {
+            e.direction = 0;
+            printf("direction = 1");
+         }
     
-    //Test if elevator is full
+        //Test if elevator is full
 
-    //if not Take new person
+        //if not Take new person
 
-    //Check if person thread needs to leave elevator
+        //Check if person thread needs to leave elevator
 
-    //Elevator moves
+        //Elevator moves
 
     
-
-	
     }
     while(1);
 
 }
-
-
-
