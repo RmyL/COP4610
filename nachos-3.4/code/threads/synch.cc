@@ -33,7 +33,7 @@
 //	"initialValue" is the initial value of the semaphore.
 //----------------------------------------------------------------------
 
-Semaphore::Semaphore(const char* debugName, int initialValue)
+Semaphore::Semaphore(char* debugName, int initialValue)
 {
     name = debugName;
     value = initialValue;
@@ -61,13 +61,14 @@ Semaphore::~Semaphore()
 //	when it is called.
 //----------------------------------------------------------------------
 
-void Semaphore::P()
+void
+Semaphore::P()
 {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
     
     while (value == 0) { 			// semaphore not available
-	    queue->Append((void *)currentThread);	// so go to sleep
-	    currentThread->Sleep();
+	queue->Append((void *)currentThread);	// so go to sleep
+	currentThread->Sleep();
     } 
     value--; 					// semaphore available, 
 						// consume its value
@@ -83,14 +84,15 @@ void Semaphore::P()
 //	are disabled when it is called.
 //----------------------------------------------------------------------
 
-void Semaphore::V()
+void
+Semaphore::V()
 {
     Thread *thread;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     thread = (Thread *)queue->Remove();
     if (thread != NULL)	   // make thread ready, consuming the V immediately
-	    scheduler->ReadyToRun(thread);
+	scheduler->ReadyToRun(thread);
     value++;
     (void) interrupt->SetLevel(oldLevel);
 }
@@ -98,110 +100,91 @@ void Semaphore::V()
 // Dummy functions -- so we can compile our later assignments 
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
-
-//----------------------------------------------------------------------
-// Lock::Lock
-//      Initialize a lock, so that it can be used for synchronization.
-//      Initially, unlocked.
-//
-//      "debugName" is an arbitrary name, useful for debugging.
-//----------------------------------------------------------------------
-Lock::Lock(const char* debugName) 
-{
+Lock::Lock(char* debugName) {
     name = debugName;
-    semaphore = new Semaphore("lock", 1);  // initially, unlocked
-    lockHolder = NULL;
+    sempahore = new Semaphore("lock", 1);
 }
 
-//----------------------------------------------------------------------
-// Lock::~Lock
-//      Deallocate a lock
-//----------------------------------------------------------------------
-Lock::~Lock() 
-{
-    delete semaphore;	
+
+Lock::~Lock() {
+    delete sempahore;
 }
 
-//----------------------------------------------------------------------
-// Lock::Acquire
-//      Atomically wait until the lock is free, then set it to busy.
-//      Equivalent to Semaphore::P(), with the semaphore value of 0
-//      equal to busy, and semaphore value of 1 equal to free.
-//----------------------------------------------------------------------
-void Lock::Acquire() 
-{
-    semaphore->P();
-    lockHolder = kernel->currentThread;	
-}
 
-//----------------------------------------------------------------------
-// Lock::Release
-//      Atomically set lock to be free, waking up a thread waiting
-//      for the lock, if any.
-//      Equivalent to Semaphore::V(), with the semaphore value of 0
-//      equal to busy, and semaphore value of 1 equal to free.
-//
-//      By convention, only the thread that acquired the lock
-//      may release it.
-//---------------------------------------------------------------------
-void Lock::Release() 
-{
-    ASSERT(IsHeldByCurrentThread());
-    lockHolder = NULL;
-    semaphore->V();	
-}
-
-Condition::Condition(const char* debugName)
-{
-    name = debugName;
-    queue = new List;
-    lock = NULL;
-}
-
-Condition::~Condition()
-{
-    delete queue;
-}
-
-void Condition::Wait(Lock* conditionLock)
-{
+void Lock::Acquire() {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    ASSERT(conditionLock->isHeldByCurrentThread());
-    if (queue->IsEmpty()) {
-        lock = conditionLock;
-    }
 
-    ASSERT(lock==conditionLock);
-    queue->Append(currentThread);
-    conditionLock->Release();
+    sempahore->P();
+    lockholder = currentThread;
+
+    (void)interrupt->SetLevel(oldLevel);
+}
+
+
+void Lock::Release() {
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    //assert only the holder thread can release the lock
+    ASSERT(isHeldByCurrentThread());
+
+    lockholder = NULL;
+    sempahore->V();
+
+    (void)interrupt->SetLevel(oldLevel);
+}
+
+bool Lock::isHeldByCurrentThread()
+{
+    return lockholder == currentThread;
+}
+
+Condition::Condition(char* debugName) {
+    name = debugName;
+    waitingList = new List();
+}
+
+
+Condition::~Condition() {
+    delete waitingList;
+}
+
+
+void Condition::Wait(Lock* conditionLock) { 
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    ASSERT(conditionLock->isHeldByCurrentThread());
+
+    waitingList->Append((void*)currentThread);
     currentThread->Sleep();
+
     conditionLock->Acquire();
-    (void) interrupt->SetLevel(oldLevel);
+
+    (void)interrupt->SetLevel(oldLevel);
 }
 
-void Condition::Signal(Lock* conditionLock)
-{
-    Thread *nextThread;
-    IntStatus oldLevel = interrupt->SetLevel(IntOff);
-    if(!queue->IsEmpty()){
-        ASSERT(lock == conditionLock);
-        nextThread = (Thread *)queue->Remove();
-        scheduler->ReadyToRun(nextThread);
-    }
-    (void) interrupt->SetLevel(oldLevel);
-}
 
-void Condition::Broadcast(Lock* conditionLock)
-{
-    Thread *nextThread;
+void Condition::Signal(Lock* conditionLock) {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     ASSERT(conditionLock->isHeldByCurrentThread());
-    if(!queue->IsEmpty()) {
-        ASSERT(lock == conditionLock);
-        while (nextThread = (Thread *)queue->Remove()){
-            scheduler->ReadyToRun(nextThread);
-        }
+
+    if(!waitingList->IsEmpty()) {
+        Thread* waitingThread = (Thread*)waitingList->Remove();
+        scheduler->ReadyToRun(waitingThread);
     }
-    (void) interrupt->SetLevel(oldLevel);
+
+    (void)interrupt->SetLevel(oldLevel);
+}
+
+
+void Condition::Broadcast(Lock* conditionLock) {
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    ASSERT(conditionLock->isHeldByCurrentThread());
+
+    while(!waitingList->IsEmpty()){
+        Signal(conditionLock);
+    }
+
+    (void)interrupt->SetLevel(oldLevel);
 }
