@@ -38,15 +38,15 @@
 
 class Semaphore {
   public:
-    Semaphore(const char* debugName, int initialValue);	// set initial value
+    Semaphore(char* debugName, int initialValue);	// set initial value
     ~Semaphore();   					// de-allocate semaphore
-    const char* getName() { return name;}			// debugging assist
+    char* getName() { return name;}			// debugging assist
     
     void P();	 // these are the only operations on a semaphore
     void V();	 // they are both *atomic*
     
   private:
-    const char* name;        // useful for debugging
+    char* name;        // useful for debugging
     int value;         // semaphore value, always >= 0
     List *queue;       // threads waiting in P() for the value to be > 0
 };
@@ -65,7 +65,7 @@ class Semaphore {
 
 class Lock {
   public:
-    Lock(const char* debugName);  		// initialize lock to be FREE
+    Lock(char* debugName);  		// initialize lock to be FREE
     ~Lock();				// deallocate lock
     char* getName() { return name; }	// debugging assist
 
@@ -80,6 +80,10 @@ class Lock {
   private:
     char* name;				// for debugging
     // plus some other stuff you'll need to define
+
+    // variables used for synch.cc - locks
+    Semaphore* sempahore;
+    Thread* lockholder;
 };
 
 // The following class defines a "condition variable".  A condition
@@ -116,7 +120,7 @@ class Lock {
 
 class Condition {
   public:
-    Condition(const char* debugName);		// initialize condition to 
+    Condition(char* debugName);		// initialize condition to 
 					// "no one waiting"
     ~Condition();			// deallocate the condition
     char* getName() { return (name); }
@@ -132,5 +136,8 @@ class Condition {
   private:
     char* name;
     // plus some other stuff you'll need to define
+
+    // variables used for synch.cc - conditions
+    List* waitingList;
 };
 #endif // SYNCH_H
