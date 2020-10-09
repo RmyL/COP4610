@@ -11,11 +11,10 @@
 
 #include "copyright.h"
 #include "system.h"
-#include "synch.h"
+#include "synch.h" // includes semaphore, locks, and conditions
 
 // testnum is set in main.cc
 int testnum = 1;
-int numThreads=0 ;
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -25,63 +24,28 @@ int numThreads=0 ;
 //	"which" is simply a number identifying the thread, for debugging
 //	purposes.
 //----------------------------------------------------------------------
-
-
- #if defined(HW1_SEMAPHORES)
-Semaphore * lock;
- #endif
-
-
 int SharedVariable;
+void SimpleThread();
+
 void SimpleThread(int which) {
-    int num, val;
-
-    
-    for(num = 0; num < 5; num++) {
-        #if defined(HW1_SEMAPHORES)
-        lock->P();
-        #endif       
-        
-        val = SharedVariable;
-        printf("*** thread %d sees value %d\n", which, val);
-        currentThread->Yield();
-        
-        SharedVariable = val+1;
-        
-        #if defined(HW1_SEMAPHORES)
-        lock->V();
-        #endif
-        
-        currentThread->Yield();
-    }
-    
-    #if defined(HW1_SEMAPHORES)
-       if(which ==numThreads)
-    {
-    	lock->V();
-    	lock->P();
-    }    
-    lock->P();
-    #endif
-    
-    val = SharedVariable;
-    printf("Thread %d sees final value %d\n", which, val);
-    
-    #if defined(HW1_SEMAPHORES)
-    	lock->V();
-    #endif
+	int num, val;
+	for(num = 0; num < 5; num++) {
+		val = SharedVariable;
+		printf("*** thread %d sees value %d\n", which, val);
+		currentThread -> Yield();
+		SharedVariable = val+1;
+		currentThread -> Yield();
+	}
+	val = SharedVariable;
+	printf("Thread %d sees final value %d\n", which, val);
 }
-
-
-
-
 
 //----------------------------------------------------------------------
 // ThreadTest1
 // 	Set up a ping-pong between two threads, by forking a thread 
 //	to call SimpleThread, and then calling SimpleThread ourselves.
 //----------------------------------------------------------------------
-/*
+
 void
 ThreadTest1()
 {
@@ -89,7 +53,7 @@ ThreadTest1()
 
     Thread *t = new Thread("forked thread");
 
-    t->Fork(SimpleThread, 1);
+    t -> Fork(SimpleThread, 1);
     SimpleThread(0);
 }
 
@@ -110,27 +74,30 @@ ThreadTest()
 	break;
     }
 }
-*/
-void 
-ThreadTest(int n)
-{
-#if defined(HW1_SEMAPHORES)
-	lock = new Semaphore("lock", 1);
-#endif
 
-    Thread *t[n];
-    int i;
-    for (i=0;i<n;i++)
-    {
-        t[1] = new Thread("forked thread");
-        t[1]->Fork(SimpleThread, i+1);
-        numThreads++;
-    }
-    SimpleThread(0);
+void 
+ThreadTest(int n){
+	DEBUG('t', "Testing Different Thread Tests");
+
+	for (int i=0; i<n;i++)
+	{
+		Thread *t= new Thread("threadtest thread");
+		t -> Fork(SimpleThread, i);
+	}
+
 }
-//Elevator
+
+//
+//ELEVATOR
+//
+#if defined(HW1_ELEVATOR)
 #define ELEVATOR_CAPACITY 5
 
+struct Floor
+{
+    int gettingOn;
+    int gettingOff;
+};
 
 struct PersonThread
 {
@@ -139,78 +106,122 @@ struct PersonThread
     int toFloor;
 };
 
-
-struct ElevatorThread
-{
-    int numFloors;
+struct ElevatorThread {
     int currentFloor;
     int numPeopleIn;
-    bool direction; //1 for up; 0 for down
 };
 
+enum Direction {UP, DOWN};
+Condition *eCond = new Condition("elevator condition");
+Lock *eLock = new Lock("elevator lock");
+Floor *floors;
+Direction direction;
+ElevatorThread e;
+int nextID = 1; // used to uniquely acquire a new person
 
-void Elevator(int numFloors)
-{
-    ElevatorThread e = new ElevatorThread;
-    e->numFloors = numFloors;
-    e->currentFloor = 1; //1 is ground floor
-    e->numPeopleIn = 0;
-    e->direction = 1;
-    e->Fork(run_elevator(e));
-}
+void runElevator(int numFloors) {
+    do {
+        //Elevator is moving to next floor
+        eLock->Acquire();
+        for(int i = 0; i < 50; i++);
 
-int nextID = 0;
-void ArrivingGoingFromTo(int atFloor, int toFloor)
-{
-    
-    for(int i = 0; i < 50; i++)
-    {
-        // 50 ticks between floors
-    }
-    
-    printf("Elevator arrives on floor %d", atFloor);
+        if(direction == UP)
+            e.currentFloor++;
+        else if(direction == DOWN)
+            e.currentFloor--;
 
-    if(nextID <= 5){
-        PersonThread *p = new PersonThread;
-        p->atFloor = atFloor;
-        p->toFloor = toFloor;
-        p->id = nextID++;
-    } 
-    else {
-        printf("Elevator is too full! There are %d people in the elevator.", nextID);
+        printf("Elevator arrives on floor %d.\n", e.currentFloor);
+        eLock->Release(); // release (1)
+        //Elevator Arrived
 
-    }
-
-    printf("Person" + p->id + "wants to go to floor" + p->atFloor + "from floor" + p->toFloor)
-}
-
-
-void run_elevator(ElevatorThread e)
-{
-    
-    do
-    {
-        if (e.numFloors <= e.currentFloor) 
-        {
-            printf("direction = 1");
-            e.direction = 1;
+        currentThread->Yield();
+        if(e.currentFloor == numFloors) {
+            printf("Going down\n");
+            direction = DOWN;
         }
-        else 
-        {
-            e.direction = 0;
-            printf("direction = 1");
-         }
-    
-        //Test if elevator is full
+        else if(e.currentFloor == 0) {
+            printf("Going up\n");
+            direction = UP;
+        }
+        
+        //Let people get off
+        eLock->Acquire();
+        eCond->Broadcast(eLock);
+        eLock->Release();
 
-        //if not Take new person
+        eLock->Acquire();
+        while(floors[e.currentFloor].gettingOff > 0)
+            eCond->Wait(eLock);
+        eLock->Release();// release (2)
 
-        //Check if person thread needs to leave elevator
-
-        //Elevator moves
-
-    
+        //Let people get on
+        eLock->Acquire();
+        eCond->Broadcast(eLock);
+        while(floors[e.currentFloor].gettingOn > 0 && e.numPeopleIn < ELEVATOR_CAPACITY)
+            eCond->Wait(eLock);    
+        eLock->Release();// releae (3)
     }
     while(1);
-
 }
+
+void runPerson(int p)
+{
+    PersonThread *person = (PersonThread*)p;
+
+    //Elevator Release so acquiing lock
+    eLock->Acquire(); //aquire (1)
+    floors[person->atFloor].gettingOn++;
+    printf("Person %d wants to go to floor %d from floor %d.\n", person->id, person->toFloor, person->atFloor);
+    eLock->Release();
+
+    //Wait for the elevator to arrive and have space
+    eLock->Acquire(); //aquire (2)
+    while(e.currentFloor != person->atFloor || e.numPeopleIn == ELEVATOR_CAPACITY)
+	    eCond->Wait(eLock);
+    eLock->Release();
+    
+    //Get on elevator and wait to arrive at desired floor
+    eLock->Acquire();
+    floors[person->toFloor].gettingOff++;
+    floors[person->atFloor].gettingOn--;
+    e.numPeopleIn++;
+    printf("Person %d got into the elevator.\n", person->id);
+    eCond->Broadcast(eLock);
+    eLock->Release();
+
+    //Get off on desired Floor
+    eLock->Acquire();
+    while(e.currentFloor != person->toFloor)
+	    eCond->Wait(eLock);
+    e.numPeopleIn--;
+    printf("Person %d got out of the elevator.\n", person->id); 
+    floors[person->toFloor].gettingOff--;
+    eCond->Broadcast(eLock);
+    eLock->Release();
+}
+
+void Elevator(int numFloors) {
+    Thread* elevator = new Thread("Elevator Thread");
+    // wake up elevator
+    floors = new Floor[numFloors];
+    for(int i = 0; i < numFloors; i++) {
+	    floors[i].gettingOn = 0;
+	    floors[i].gettingOff = 0;
+    }
+
+    e.currentFloor = 0; // goes up from -1 to floor 0
+    e.numPeopleIn = 0;
+    direction = UP;
+    //
+    elevator->Fork(runElevator, numFloors);
+}
+
+void ArrivingGoingFromTo(int atFloor, int toFloor) {
+    Thread* person = new Thread("Person Thread");
+    PersonThread *p = new PersonThread;
+    p->atFloor = atFloor;
+    p->toFloor = toFloor;
+    p->id = nextID++;
+    person->Fork(runPerson,(int)p);
+}
+#endif
