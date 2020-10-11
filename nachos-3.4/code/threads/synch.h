@@ -80,9 +80,8 @@ class Lock {
   private:
     char* name;				// for debugging
     // plus some other stuff you'll need to define
-
-    // variables used for synch.cc - locks
-    Semaphore* sempahore;
+    int value;
+    List* queue;
     Thread* lockholder;
 };
 

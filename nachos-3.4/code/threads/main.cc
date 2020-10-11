@@ -58,7 +58,12 @@ extern int testnum;
 #endif
 
 // External functions used by this file
+// HW1 ELEVATORS
+#if defined(HW1_ELEVATOR)
 extern void Elevator(int numFloors);
+extern void ArrivingGoingFromTo(int atFloor, int toFloor);
+#endif
+extern void waiterTest(void);
 extern void ThreadTest(int), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
@@ -101,11 +106,20 @@ main(int argc, char** argv)
 		}
 	}
 
-	if (HW1_ELEVATOR) {
-		Elevator(10);
-	}
+	//Ping();
+	//LockTest();
+	//SemaphorePing();
+	//ThreadTest(4);
+	#ifdef HW1_ELEVATOR
+    Elevator(30);
+    ArrivingGoingFromTo(1, 4);
+    ArrivingGoingFromTo(1, 4);
+    ArrivingGoingFromTo(1, 3);
+    ArrivingGoingFromTo(1, 6);
+    ArrivingGoingFromTo(1, 9);
+    ArrivingGoingFromTo(30, 1);
+	#endif
 
-    ThreadTest();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
