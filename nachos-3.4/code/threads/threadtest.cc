@@ -167,21 +167,21 @@ void run_elevator(int numFloors)
     else if(currFloor == 0)
         direction = true;
 
-    eLock->Acquire();
+    eLock->Acquire();a
     eCond->Broadcast(eLock);
     eLock->Release();
     
     }
 }
 
-
+int nextID;
 void ArrivingGoingFromTo(int atFloor, int toFloor)
 {
     Thread* person = new Thread("Person Thread");
     Person *p = new Person;
     p->atFloor = atFloor;
     p->toFloor = toFloor;
-    p->id = counterid++;
+    p->id = nextID++;
     person->Fork(run_person,(int)p);
 }
 
