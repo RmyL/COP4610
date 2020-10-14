@@ -158,7 +158,7 @@ void run_elevator(int numFloors)
 {
     while(1)
     {
-    for(int i = 0; i < 500000000; i++); 
+    for(int i = 0; i < 50; i++); 
 
     if(direction && currFloor!=numFloors)
         currFloor++;
