@@ -30,7 +30,7 @@ void run_person(int p);
 
  #if defined(HW1_SEMAPHORES)
 Semaphore * lock;
- #endif
+#endif
 
 
 int SharedVariable;
