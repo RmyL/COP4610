@@ -1,0 +1,55 @@
+Analysis Report Group 3 (William, Josh, Norlan, Luigi)
+
+Background
+
+    The reason for writing this report is to share our experience 
+working on Project 1 - Multithreading and Synchronization.
+
+Progress:
+
+    Our team was able to fulfill all parts of the project dictated 
+by the project description. 
+
+Exercise 1 - Simple Threading:
+
+    In this exercise, we were able to implement the function 
+ThreadTest(int n). Looking over the use of this function 
+we were able to look closely at how this threading system 
+works and how to use it properly to continue into the major 
+part of the project in exercise 4. we modified the 
+SimpleThread() as dictated and saw similarities with this 
+function and the program that ran back in Project 0, but 
+now we were able to choose how many values that nachos 
+should run instead of a fixed one. 
+
+Excercise 2 - Implementing Locks:
+
+    This part of the exercise was a bit tricky. We learned 
+that semaphores were just a signaling mechanism as opposed 
+to locks, a locking mechanism. The team had to do some 
+extended research on how semaphores and locks worked in 
+order to implement them. We also changed the Semaphore 
+test code in SimpleThread() and we were able to run the 
+same function but now using Locks instead.
+
+Excercise 3 - Implementing Condition.
+
+    Conditions added another level of complexity to Locks. 
+We use the knowledge from Semaphores and Locks() in 
+order to write the implementation of Condition(). 
+Condition adds the thread into a queue and waits until 
+it gets woken up when a condition is true. In Condition() 
+you can either Signal() a single thread in the queue or 
+Broadcast() all sleeping threads. 
+
+Exercise 4 - Elevator:
+
+    The most challenging part of this project was most definitely 
+the Elevator(). Our team was able to implement Locks() and Condition() 
+variables into the exercise so that the elevator was able to go 
+through the numFloors (number of floors) picking and dispatching people. 
+We did some research on how elevator logic work and we decided to 
+implement something like the OTIS elevator system. We initially 
+had issues where the elevator would no go back down when it reached 
+the last floor it was given. We were able to fix this issue and 
+perfectly implemented a similar logic of OTIS.
