@@ -28,60 +28,45 @@ int numThreads=0;
 void run_elevator(int numFloors);
 void run_person(int p);
 
-//SimpleThreads with Semaphores()
-#if defined(HW1_SEMAPHORES)
 int SharedVariable;
-Semaphore *lock;
+#if defined(HW1_SEMAPHORES)
+Semaphore *lock = new Semaphore("semaphore", 1);
+#elif defined(HW1_LOCKS)
+Lock *testlock = new Lock("lock");;
+#endif
+
 void SimpleThread(int which) {
     int num, val;
     
-    if (lock == NULL) {
-        lock = new Semaphore("semaphore", 1);
-    }
-    
     for(num = 0; num < 5; num++) {
+        #if defined(HW1_SEMAPHORES)
         lock->P();
-
+        #elif defined(HW1_LOCKS)
+        testlock->Acquire();
+        #endif
         val = SharedVariable;
         printf("*** thread %d sees value %d\n", which, val);
         currentThread->Yield();
         
         SharedVariable = val+1;
         
+        #if defined(HW1_SEMAPHORES)
         lock->V();
+        #elif defined(HW1_LOCKS)
+        testlock->Release();
+        #endif
         
         currentThread->Yield();
     }
     
-    val = SharedVariable;
-    printf("Thread %d sees final value %d\n", which, val);
-}
-// SimpleThread with Locks
-#elif defined(HW1_LOCKS)
-int SharedVariable;
-Lock *testlock;
-void SimpleThread(int which) {
-    int num, val;
-    if (testlock == NULL) {
-        testlock = new Lock("lock");
-    }
-    for(num = 0; num < 5; num++) { 
-	    testlock->Acquire();
-	
-	    val = SharedVariable; 
-	    printf("*** thread %d sees value %d\n", which, val); 
-	    currentThread->Yield(); 
-	    SharedVariable = val+1; 
-	
-	    testlock->Release();
-	
-	    currentThread->Yield(); 
+    numThreads--;
+    while(numThreads != 0) {
+        currentThread->Yield();
     }
 
     val = SharedVariable;
     printf("Thread %d sees final value %d\n", which, val);
 }
-#endif
 //----------------------------------------------------------------------
 // ThreadTest1
 // 	Set up a ping-pong between two threads, by forking a thread 
@@ -117,19 +102,18 @@ ThreadTest()
     }
 }
 */
-#if defined(THREADS)
+
 void  ThreadTest(int n) {
-    Thread *t[n];
-    int i;
-    for (i=0;i<n;i++)
-    {
-        t[1] = new Thread("forked thread");
-        t[1]->Fork(SimpleThread, i+1);
+    Thread *t;
+    
+    for (int i=0;i<n;i++) {
+        t = new Thread("forked thread");
+        t->Fork(SimpleThread, i+1);
         numThreads++;
     }
+    numThreads =  n + 1;
     SimpleThread(0);
 }
-#endif
 
 //Elevator
 typedef struct Person
