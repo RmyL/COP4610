@@ -106,10 +106,14 @@ main(int argc, char** argv)
 		}
 	}
 
-	//Ping();
-	//LockTest();
-	//SemaphorePing();
-	//ThreadTest(4);
+	#ifdef HW1_LOCKS
+	ThreadTest(1);
+	#endif
+
+	#ifdef HW1_SEMAPHORES
+	ThreadTest(2);
+	#endif
+
 	#ifdef HW1_ELEVATOR
     Elevator(30);
     ArrivingGoingFromTo(1, 4);

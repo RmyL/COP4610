@@ -15,7 +15,7 @@
 
 // testnum is set in main.cc
 int testnum = 1;
-int numThreads=0 ;
+int numThreads=0;
 
 //----------------------------------------------------------------------
 // SimpleThread
@@ -28,61 +28,60 @@ int numThreads=0 ;
 void run_elevator(int numFloors);
 void run_person(int p);
 
- #if defined(HW1_SEMAPHORES)
-Semaphore * lock;
-#endif
-
-
+//SimpleThreads with Semaphores()
+#if defined(HW1_SEMAPHORES)
 int SharedVariable;
+Semaphore *lock;
 void SimpleThread(int which) {
     int num, val;
-
-     #if defined(HW1_LOCKS)
-        testlock = new Lock("test");
-        #endif    
+    
+    if (lock == NULL) {
+        lock = new Semaphore("semaphore", 1);
+    }
+    
     for(num = 0; num < 5; num++) {
-        #if defined(HW1_SEMAPHORES)
         lock->P();
-        #elif defined(HW1_LOCKS)  
-			testlock->Acquire();
-        #endif   
-        
+
         val = SharedVariable;
         printf("*** thread %d sees value %d\n", which, val);
         currentThread->Yield();
         
         SharedVariable = val+1;
         
-        #if defined(HW1_SEMAPHORES)
         lock->V();
-        #elif defined(HW1_LOCKS)  
- 			testlock->Release();
-         #endif  
         
         currentThread->Yield();
     }
     
-    #if defined(HW1_SEMAPHORES)
-       if(which ==numThreads)
-    {
-    	lock->V();
-    	lock->P();
-    }    
-    lock->P();
-    #endif
-    
     val = SharedVariable;
     printf("Thread %d sees final value %d\n", which, val);
-    
-    #if defined(HW1_SEMAPHORES)
-    	lock->V();
-    #endif
 }
+// SimpleThread with Locks
+#elif defined(HW1_LOCKS)
+int SharedVariable;
+Lock *testlock;
+void SimpleThread(int which) {
+    int num, val;
+    if (testlock == NULL) {
+        testlock = new Lock("lock");
+    }
+    for(num = 0; num < 5; num++) { 
+	    testlock->Acquire();
+	
+	    val = SharedVariable; 
+	    printf("*** thread %d sees value %d\n", which, val); 
+	    currentThread->Yield(); 
+	    SharedVariable = val+1; 
+	
+	    testlock->Release();
+	
+	    currentThread->Yield(); 
+    }
 
-
-
-
-
+    val = SharedVariable;
+    printf("Thread %d sees final value %d\n", which, val);
+}
+#endif
 //----------------------------------------------------------------------
 // ThreadTest1
 // 	Set up a ping-pong between two threads, by forking a thread 
@@ -118,13 +117,8 @@ ThreadTest()
     }
 }
 */
-void 
-ThreadTest(int n)
-{
-#if defined(HW1_SEMAPHORES)
-	lock = new Semaphore("lock", 1);
-#endif
-
+#if defined(THREADS)
+void  ThreadTest(int n) {
     Thread *t[n];
     int i;
     for (i=0;i<n;i++)
@@ -135,6 +129,8 @@ ThreadTest(int n)
     }
     SimpleThread(0);
 }
+#endif
+
 //Elevator
 typedef struct Person
 {
