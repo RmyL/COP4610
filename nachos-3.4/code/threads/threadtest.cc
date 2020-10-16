@@ -163,8 +163,7 @@ void run_elevator(int numFloors) {
 }
 
 int nextID;
-void ArrivingGoingFromTo(int atFloor, int toFloor)
-{
+void ArrivingGoingFromTo(int atFloor, int toFloor) {
     Thread* person = new Thread("Person Thread");
     Person *p = new Person;
     p->atFloor = atFloor;
@@ -173,8 +172,7 @@ void ArrivingGoingFromTo(int atFloor, int toFloor)
     person->Fork(run_person,(int)p);
 }
 
-void run_person(int p)
-{
+void run_person(int p) {
     Person *person= (Person*) p;
     int x=person->id;
     int y=person->toFloor;
