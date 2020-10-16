@@ -128,35 +128,37 @@ Lock* eLock= new Lock("eLock");
 int currFloor=0;
 int occupied=0;
 bool direction=true;
+int counter;
 
-void Elevator(int numFloors)
-{
+void Elevator(int numFloors) {
     Thread* e = new Thread("eThread");
     e->Fork(run_elevator, numFloors);
 }
-void run_elevator(int numFloors)
-{
-    while(1)
-    {
+void run_elevator(int numFloors) {
+    while(1) {
     for(int i = 0; i < 500000000; i++); 
-
-    if(direction && currFloor!=numFloors)
-        currFloor++;
-    else 
-        currFloor--;
-    printf("Elevator arrives at floor %d.\n", currFloor);
-    
-    currentThread->Yield(); 
 
     if(numFloors == currFloor)
         direction = false;
     else if(currFloor == 0)
         direction = true;
 
+    if(direction && currFloor < numFloors)
+        currFloor++;
+    else if(direction == false || currFloor == numFloors)
+        currFloor--;
+    printf("Elevator arrives at floor %d.\n", currFloor);
+    
+    currentThread->Yield(); 
     eLock->Acquire();
     eCond->Broadcast(eLock);
     eLock->Release();
-    
+
+    if(counter == 0){
+	currFloor = 0;
+        printf("Elevator arrives at floor %d.\n", currFloor);
+        break;
+    }
     }
 }
 
@@ -177,7 +179,7 @@ void run_person(int p)
     int x=person->id;
     int y=person->toFloor;
     int z=person->atFloor;
-
+    counter++;
     printf("Person %d wants to go to floor %d from floor %d.\n",x,y,z);
 
     eLock->Acquire();
@@ -194,6 +196,6 @@ void run_person(int p)
     eLock->Release();
 
     occupied--;
-    printf("Person %d got out of the elevator at floor %d.\n", x, currFloor); 
-
+    printf("Person %d got out of the elevator at floor %d.\n", x, currFloor);
+    counter--; 
 }
