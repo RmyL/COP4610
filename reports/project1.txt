@@ -55,4 +55,8 @@ We did some research on how elevator logic work and we decided to
 implement something like the OTIS elevator system. We initially 
 had issues where the elevator would no go back down when it reached 
 the last floor it was given. We were able to fix this issue and 
-perfectly implemented a similar logic of OTIS.
+perfectly implemented a similar logic of OTIS. The elevator's ground 
+floor is labeled as floor zero. After picking up and dispatching the 
+last person of the day, the elevator will return to the ground floor 
+(floor zero) and stay there until the next group of people are ready
+to use the elevator once again.
