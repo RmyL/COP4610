@@ -184,3 +184,6 @@ void AddrSpace::RestoreState()
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 }
+
+// https://github.com/sebastiangaliano/nachos/blob/master/userprog/addrspace.cc
+// https://github.com/MrOrz/nachos/blob/master/userprog/addrspace.cc
