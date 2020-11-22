@@ -48,6 +48,7 @@
 //	are in machine.h.
 //----------------------------------------------------------------------
 
+
 void
 ExceptionHandler(ExceptionType which)
 {
@@ -56,6 +57,18 @@ ExceptionHandler(ExceptionType which)
     if ((which == SyscallException) && (type == SC_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
+    } else if ((which == SyscallException) && (type == SC_Fork)){
+
+    } else if((which == SyscallException) && (type == SC_Yield)){
+
+    } else if ((which == SyscallException) && (type == SC_Exit)){
+
+    } else if ((which == SyscallException) && (type == SC_Exec)){
+
+    } else if ((which == SyscallException) && (type == SC_Kill)){
+        //placeholder as SC_Kill is not entirely defined.
+    } else if ((which == SyscallException) && (type == SC_Join)){
+
     } else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
