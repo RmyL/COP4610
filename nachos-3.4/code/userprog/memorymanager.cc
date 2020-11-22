@@ -1,31 +1,44 @@
-#ifndef MEMORYMANGER_H
-#define MEMORYMANGER_H
+/*
+	MemoryManger will be used to track allocated pages, free pages, allocate pages and free up physical memory
+*/
+#include "memorymanager.h"
 
-class AddrSpace;
-class Thread;
+MemoryManager::MemoryManager(int numTotalPages)
+{
+	lock = new Lock("memLock");
+	bitmap = new BitMap(numTotalPages);
+}
 
-#include "synch.h"
-#include "bitmap.h"
+MemoryManager::~MemoryManager() // Deallocation
+{
+	delete lock;
+	delete bitmap;
+}
+//check how many many pages are avaibale to allocate
+int MemoryManager::FreePages()
+{
+	lock->Acquire();
+	int freePages = bitmap->NumClear(); //Store the number of free pages from NumClear
+	lock->Release();
+	return freePages;
+}
 
-class MemoryManager{
+int MemoryManager::getPage()
+{
+	lock->Acquire();
+	int page = bitmap->Find();
+	lock->Release();
 
-  public:
+	return page;
+}
 
-    MemoryManager(int numTotalPages);
 
-  	~MemoryManager();
+void MemoryManager::clearPage(int pageId)
+{
+	lock->Acquire();
+	if(bitmap->Test(pageId))
+		bitmap->Clear(pageId);
+	lock->Release();
+}
 
-  	int FreePages();
 
-  	int getPage();
-
-  	void clearPage(int pageId);
-
-   private:
-
-       Bitmap *virtMem;
-       Lock *lock;
-
-};
-
-#endif
