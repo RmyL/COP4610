@@ -122,7 +122,31 @@ void Fork(void (*func)());
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
-void Yield();		
+
+// New definitions
+void Yield();
+
+void PrintInt (int x);
+
+void PrintChar (char x);
+
+void PrintString (char *x);
+
+void PrintIntHex (int x);
+
+int GetReg (int regno);
+
+int GetPA (unsigned vaddr);
+
+int GetPID (void);
+
+int GetPPID (void);
+
+void Sleep (unsigned);
+
+int GetTime (void);
+
+int GetNumInstr (void);
 
 #endif /* IN_ASM */
 
