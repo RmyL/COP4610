@@ -1,9 +1,9 @@
-// addrspace.cc 
+// addrspace.cc
 //	Routines to manage address spaces (executing user programs).
 //
 //	In order to run a user program, you must:
 //
-//	1. link with the -N -T 0 option 
+//	1. link with the -N -T 0 option
 //	2. run coff2noff to convert the object file to Nachos format
 //		(Nachos object code format is essentially just a simpler
 //		version of the UNIX executable object code format)
@@ -12,22 +12,26 @@
 //		don't need to do this last step)
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
 #include "noff.h"
+#include "machine.h"
+#ifdef HOST_SPARC
+#include <strings.h>
+#endif
 
 //----------------------------------------------------------------------
 // SwapHeader
-// 	Do little endian to big endian conversion on the bytes in the 
+// 	Do little endian to big endian conversion on the bytes in the
 //	object file header, in case the file was generated on a little
 //	endian machine, and we're now running on a big endian machine.
 //----------------------------------------------------------------------
 
-static void 
+static void
 SwapHeader (NoffHeader *noffH)
 {
 	noffH->noffMagic = WordToHost(noffH->noffMagic);
@@ -42,12 +46,6 @@ SwapHeader (NoffHeader *noffH)
 	noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
-
-//This global variable stores track of number of pages created so far
-
-int totalPages=0;
-
-
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 // 	Create an address space to run a user program.
@@ -56,7 +54,7 @@ int totalPages=0;
 //
 //	Assumes that the object code file is in NOFF format.
 //
-//	First, set up the translation from program memory to physical 
+//	First, set up the translation from program memory to physical
 //	memory.  For now, this is really simple (1:1), since we are
 //	only uniprogramming, and we have a single unsegmented page table
 //
@@ -69,98 +67,56 @@ AddrSpace::AddrSpace(OpenFile *executable)
     unsigned int i, size;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-    if ((noffH.noffMagic != NOFFMAGIC) && 
+    if ((noffH.noffMagic != NOFFMAGIC) &&
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
 
 // how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
 
-    ASSERT(numPages + totalPages <= NumPhysPages);		// check we're not trying
+    ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
 						// at least until we have
 						// virtual memory
 
-    DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n",
 					numPages, size);
-// first, set up the translation 
+// first, set up the translation
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i+totalPages;
+	pageTable[i].physicalPage = i;
 	pageTable[i].valid = TRUE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
-	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
-					// a separate page, we could set its 
+	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on
+					// a separate page, we could set its
 					// pages to be read-only
     }
-    
-// zero out the entire address space, to zero the unitialized data segment 
+
+// zero out the entire address space, to zero the unitialized data segment
 // and the stack segment
-    bzero((machine->mainMemory+totalPages*PageSize), size);
+    bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
-        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
+        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n",
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&((machine->mainMemory+totalPages*PageSize)[noffH.code.virtualAddr]),
+        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
 			noffH.code.size, noffH.code.inFileAddr);
     }
     if (noffH.initData.size > 0) {
-        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
+        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n",
 			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&((machine->mainMemory+totalPages*PageSize)[noffH.initData.virtualAddr]),
+        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
 			noffH.initData.size, noffH.initData.inFileAddr);
     }
 
-
-    totalPages=totalPages+numPages;
-}
-
-//A new function to allocate space for user programs
-AddrSpace::AddrSpace(unsigned int numParentPages, unsigned int parentStartPhysPage)
-{
-    unsigned int size,i,j;
-    numPages=numParentPages;
-    size=numPages*PageSize;
-   // printf("Inside AddrManiSpace\n");
-    ASSERT(numPages + totalPages <= NumPhysPages);      // check we're not trying
-                        // to run anything too big --
-                        // at least until we have
-                        // virtual memory
-   // printf("Assert is true\n");
-    DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
-                    numPages, size);
-
-// first, set up the translation 
-    pageTable = new TranslationEntry[numPages];
-   // printf("pageTable created\n");
-    for (i = 0; i < numPages; i++) {
-    pageTable[i].virtualPage = i;   // for now, virtual page # = phys page #
-    pageTable[i].physicalPage = i+totalPages;
-    pageTable[i].valid = TRUE;
-    pageTable[i].use = FALSE;
-    pageTable[i].dirty = FALSE;
-    pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
-                    // a separate page, we could set its 
-                    // pages to be read-only
-    }
-    //printf("pageTable setup is complete\n");
-    //unsigned int i,j;
-    i=parentStartPhysPage*PageSize;
-    j=totalPages*PageSize;
-    while(i<((parentStartPhysPage+numPages)*PageSize)){
-        machine->mainMemory[j]=machine->mainMemory[i];
-        j++; i++;
-    }
-    totalPages=totalPages+numPages;
-    //printf("finally, done with addrmanispace\n");
 }
 
 //----------------------------------------------------------------------
@@ -192,7 +148,7 @@ AddrSpace::InitRegisters()
 	machine->WriteRegister(i, 0);
 
     // Initial program counter -- must be location of "Start"
-    machine->WriteRegister(PCReg, 0);	
+    machine->WriteRegister(PCReg, 0);
 
     // Need to also tell MIPS where next instruction is, because
     // of branch delay possibility
@@ -213,7 +169,7 @@ AddrSpace::InitRegisters()
 //	For now, nothing!
 //----------------------------------------------------------------------
 
-void AddrSpace::SaveState() 
+void AddrSpace::SaveState()
 {}
 
 //----------------------------------------------------------------------
@@ -224,19 +180,49 @@ void AddrSpace::SaveState()
 //      For now, tell the machine where to find the page table.
 //----------------------------------------------------------------------
 
-void AddrSpace::RestoreState() 
+void AddrSpace::RestoreState()
 {
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 }
 
+int AddrSpace::Translate(int virtAddr)
+{
+    unsigned int virPageNum, offset;
+    unsigned int pageFrame;
+    TranslationEntry *entry;
+    virPageNum =(unsigned) virtAddr / PageSize;
+    offset = (unsigned)virtAddr % PageSize;
 
-//number of virtual pages of the thread
-unsigned int AddrSpace::getNumPages() 
-{
-    return numPages;
+    entry = &pageTable[virPageNum];
+    pageFrame = entry->physicalPage;
+    int  physAddr = pageFrame * PageSize + offset;
+
+    return physAddr;
 }
-unsigned int AddrSpace::getStartPhysPage() 
+
+int AddrSpace::ReadFile(int virtAddr, OpenFile* file, int size, int fileAddr)
 {
-    return pageTable[0].physicalPage;
+    char disk[size];
+    const void *src;
+    void *dst;
+
+    int physAddr;
+    int temp = 0;
+    int offset = 0;
+
+    file->ReadAt(disk,size,fileAddr);
+
+    while(size > 0){
+        physAddr = Translate(virtAddr);
+        src = disk + offset;
+        dst = &machine -> mainMemory[physAddr];
+        temp = min(size, PageSize);
+        bcopy(src, dst, temp);
+
+        size = size - temp;
+        offset = offset + num;
+        virtAddr = virtAddr + num;
+    }
+    return 1;
 }
