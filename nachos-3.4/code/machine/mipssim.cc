@@ -16,7 +16,7 @@
 #include "mipssim.h"
 #include "system.h"
 
-static void Mult(int a, int b, bool signedArith, unsigned int* hiPtr, unsigned int* loPtr);
+static void Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr);
 
 //----------------------------------------------------------------------
 // Machine::Run
@@ -98,7 +98,9 @@ Machine::OneInstruction(Instruction *instr)
     int nextLoadValue = 0; 	// record delayed load operation, to apply
 				// in the future
 
-    // Fetch instruction 
+    // Fetch instruction
+    currentThread->numInst++;                //Increment value of numInst on reading an instruction to keep track of total number of instructions executed by any thread/process.
+
     if (!machine->ReadMem(registers[PCReg], 4, &raw))
 	return;			// exception occurred
     instr->value = raw;
@@ -633,7 +635,7 @@ Instruction::Decode()
 //----------------------------------------------------------------------
 
 static void
-Mult(int a, int b, bool signedArith, unsigned int* hiPtr, unsigned int* loPtr)
+Mult(int a, int b, bool signedArith, int* hiPtr, int* loPtr)
 {
     if ((a == 0) || (b == 0)) {
 	*hiPtr = *loPtr = 0;

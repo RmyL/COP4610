@@ -15,6 +15,6 @@
 int
 main()
 {
-    Halt();
+    system_Halt();
     /* not reached */
 }

@@ -18,9 +18,7 @@
 
 #include "copyright.h"
 #include "post.h"
-#ifdef HOST_SPARC
-#include <strings.h>
-#endif
+
 //----------------------------------------------------------------------
 // Mail::Mail
 //      Initialize a single mail message, by concatenating the headers to
@@ -31,7 +29,7 @@
 //	"data" -- payload data
 //----------------------------------------------------------------------
 
-Mail::Mail(PacketHeader pktH, MailHeader mailH, const char *msgData)
+Mail::Mail(PacketHeader pktH, MailHeader mailH, char *msgData)
 {
     ASSERT(mailH.length <= MaxMailSize);
 
@@ -97,7 +95,7 @@ PrintHeader(PacketHeader pktHdr, MailHeader mailHdr)
 //----------------------------------------------------------------------
 
 void 
-MailBox::Put(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
+MailBox::Put(PacketHeader pktHdr, MailHeader mailHdr, char *data)
 { 
     Mail *mail = new Mail(pktHdr, mailHdr, data); 
 
@@ -119,7 +117,7 @@ MailBox::Put(PacketHeader pktHdr, MailHeader mailHdr, const char *data)
 //----------------------------------------------------------------------
 
 void 
-MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, const char *data) 
+MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, char *data) 
 { 
     DEBUG('n', "Waiting for mail in mailbox\n");
     Mail *mail = (Mail *) messages->Remove();	// remove message from list;
@@ -131,7 +129,7 @@ MailBox::Get(PacketHeader *pktHdr, MailHeader *mailHdr, const char *data)
 	printf("Got mail from mailbox: ");
 	PrintHeader(*pktHdr, *mailHdr);
     }
-    bcopy(mail->data, (char*) data, mail->mailHdr.length);
+    bcopy(mail->data, data, mail->mailHdr.length);
 					// copy the message data into
 					// the caller's buffer
     delete mail;			// we've copied out the stuff we
@@ -191,9 +189,9 @@ PostOffice::PostOffice(NetworkAddress addr, double reliability, int nBoxes)
 
 // Finally, create a thread whose sole job is to wait for incoming messages,
 //   and put them in the right mailbox. 
-    Thread *t = new Thread("postal worker");
+    NachOSThread *t = new NachOSThread("postal worker");
 
-    t->Fork(PostalHelper, (int) this);
+    t->ThreadFork(PostalHelper, (int) this);
 }
 
 //----------------------------------------------------------------------
@@ -259,7 +257,7 @@ PostOffice::PostalDelivery()
 //----------------------------------------------------------------------
 
 void
-PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
+PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, char* data)
 {
     char* buffer = new char[MaxPacketSize];	// space to hold concatenated
 						// mailHdr + data
@@ -307,7 +305,7 @@ PostOffice::Send(PacketHeader pktHdr, MailHeader mailHdr, const char* data)
 
 void
 PostOffice::Receive(int box, PacketHeader *pktHdr, 
-				MailHeader *mailHdr, const char* data)
+				MailHeader *mailHdr, char* data)
 {
     ASSERT((box >= 0) && (box < numBoxes));
 

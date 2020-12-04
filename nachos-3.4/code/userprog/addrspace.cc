@@ -19,7 +19,6 @@
 #include "system.h"
 #include "addrspace.h"
 #include "noff.h"
-#include "machine.h"
 #ifdef HOST_SPARC
 #include <strings.h>
 #endif
@@ -60,6 +59,10 @@ SwapHeader (NoffHeader *noffH)
 //
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
+
+// Used for new addrspace function.
+int totalPages=0;
+
 
 AddrSpace::AddrSpace(OpenFile *executable)
 {
@@ -118,6 +121,51 @@ AddrSpace::AddrSpace(OpenFile *executable)
     }
 
 }
+
+//
+// EDIT THIS NEW FUNCTION
+//
+AddrSpace::AddrSpace(unsigned int numParentPages, unsigned int parentStartPhysPage)
+{
+    unsigned int size,i,j;
+    numPages=numParentPages;
+    size=numPages*PageSize;
+   // printf("Inside AddrManiSpace\n");
+    ASSERT(numPages + totalPages <= NumPhysPages);      // check we're not trying
+                        // to run anything too big --
+                        // at least until we have
+                        // virtual memory
+   // printf("Assert is true\n");
+    DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
+                    numPages, size);
+
+// first, set up the translation 
+    pageTable = new TranslationEntry[numPages];
+   // printf("pageTable created\n");
+    for (i = 0; i < numPages; i++) {
+    pageTable[i].virtualPage = i;   // for now, virtual page # = phys page #
+    pageTable[i].physicalPage = i+totalPages;
+    pageTable[i].valid = TRUE;
+    pageTable[i].use = FALSE;
+    pageTable[i].dirty = FALSE;
+    pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
+                    // a separate page, we could set its 
+                    // pages to be read-only
+    }
+    //printf("pageTable setup is complete\n");
+    //unsigned int i,j;
+    i=parentStartPhysPage*PageSize;
+    j=totalPages*PageSize;
+    while(i<((parentStartPhysPage+numPages)*PageSize)){
+        machine->mainMemory[j]=machine->mainMemory[i];
+        j++; i++;
+    }
+    totalPages=totalPages+numPages;
+    //printf("finally, done with addrmanispace\n");
+}
+//
+// EDIT THIS NEW FUNCTION
+//
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
@@ -186,6 +234,16 @@ void AddrSpace::RestoreState()
     machine->pageTableSize = numPages;
 }
 
+//number of virtual pages of the thread
+unsigned int AddrSpace::getNumPages() 
+{
+    return numPages;
+}
+unsigned int AddrSpace::getStartPhysPage() 
+{
+    return pageTable[0].physicalPage;
+}
+
 int AddrSpace::Translate(int virtAddr)
 {
     unsigned int virPageNum, offset;
@@ -221,8 +279,8 @@ int AddrSpace::ReadFile(int virtAddr, OpenFile* file, int size, int fileAddr)
         bcopy(src, dst, temp);
 
         size = size - temp;
-        offset = offset + num;
-        virtAddr = virtAddr + num;
+        offset = offset + temp;
+        virtAddr = virtAddr + temp;
     }
     return 1;
 }

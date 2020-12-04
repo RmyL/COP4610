@@ -27,7 +27,15 @@
 
 // Miscellaneous useful routines
 
-#include "bool.h"
+//#include <stdbool.h>
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
 					 	// Boolean values.  
 						// This is the same definition 
 						// as in the g++ library.
@@ -45,7 +53,7 @@
 //
 //	(*func) (17);
 //
-// This is used by Thread::Fork and for interrupt handlers, as well
+// This is used by NachOSThread::ThreadFork and for interrupt handlers, as well
 // as a couple of other places.
 
 typedef void (*VoidFunctionPtr)(int arg); 
@@ -58,11 +66,11 @@ typedef void (*VoidNoArgFunctionPtr)();
 
 // Interface to debugging routines.
 
-extern void DebugInit(const char* flags);	// enable printing debug messages
+extern void DebugInit(char* flags);	// enable printing debug messages
 
 extern bool DebugIsEnabled(char flag); 	// Is this debug flag enabled?
 
-extern void DEBUG (const char flag, const char* format, ...);  	// Print debug message 
+extern void DEBUG (char flag, char* format, ...);  	// Print debug message 
 							// if flag is enabled
 
 //----------------------------------------------------------------------
@@ -82,4 +90,4 @@ extern void DEBUG (const char flag, const char* format, ...);  	// Print debug m
     }
 
 
-#endif 
+#endif //UTILITY_H

@@ -26,8 +26,8 @@
 
 // String definitions for debugging messages
 
-static const char *intLevelNames[] = { "off", "on"};
-static const char *intTypeNames[] = { "timer", "disk", "console write", 
+static char *intLevelNames[] = { "off", "on"};
+static char *intTypeNames[] = { "timer", "disk", "console write", 
 			"console read", "network send", "network recv"};
 
 //----------------------------------------------------------------------
@@ -74,7 +74,7 @@ Interrupt::Interrupt()
 Interrupt::~Interrupt()
 {
     while (!pending->IsEmpty())
-	delete (PendingInterrupt*)(pending->Remove());
+	delete pending->Remove();
     delete pending;
 }
 
@@ -173,7 +173,7 @@ Interrupt::OneTick()
 					// for a context switch, ok to do it now
 	yieldOnReturn = FALSE;
  	status = SystemMode;		// yield is a kernel routine
-	currentThread->Yield();
+	currentThread->YieldCPU();
 	status = old;
     }
 }

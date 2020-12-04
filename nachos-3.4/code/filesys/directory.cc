@@ -88,7 +88,7 @@ Directory::WriteBack(OpenFile *file)
 //----------------------------------------------------------------------
 
 int
-Directory::FindIndex(const char *name)
+Directory::FindIndex(char *name)
 {
     for (int i = 0; i < tableSize; i++)
         if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
@@ -106,7 +106,7 @@ Directory::FindIndex(const char *name)
 //----------------------------------------------------------------------
 
 int
-Directory::Find(const char *name)
+Directory::Find(char *name)
 {
     int i = FindIndex(name);
 
@@ -127,7 +127,7 @@ Directory::Find(const char *name)
 //----------------------------------------------------------------------
 
 bool
-Directory::Add(const char *name, int newSector)
+Directory::Add(char *name, int newSector)
 { 
     if (FindIndex(name) != -1)
 	return FALSE;
@@ -151,7 +151,7 @@ Directory::Add(const char *name, int newSector)
 //----------------------------------------------------------------------
 
 bool
-Directory::Remove(const char *name)
+Directory::Remove(char *name)
 { 
     int i = FindIndex(name);
 

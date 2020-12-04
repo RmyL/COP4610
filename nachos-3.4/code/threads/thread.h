@@ -27,7 +27,7 @@
 //	increase the size of thread stack -- ThreadStackSize.
 //
 //  	In this interface, forking a thread takes two steps.
-//	We must first allocate a data structure for it: "t = new Thread".
+//	We must first allocate a data structure for it: "t = new NachOSThread".
 //	Only then can we do the fork: "t->fork(f, arg)".
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
@@ -39,7 +39,7 @@
 
 #include "copyright.h"
 #include "utility.h"
-
+#include "list.h"
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
@@ -50,7 +50,6 @@
 // For simplicity, this is just the max over all architectures.
 #define MachineStateSize 18 
 
-
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
 #define StackSize	(4 * 1024)	// in words
@@ -59,7 +58,7 @@
 // Thread state
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
 
-// external function, dummy routine whose sole job is to call Thread::Print
+// external function, dummy routine whose sole job is to call NachOSThread::Print
 extern void ThreadPrint(int arg);	 
 
 // The following class defines a "thread control block" -- which
@@ -73,7 +72,7 @@ extern void ThreadPrint(int arg);
 //  Some threads also belong to a user address space; threads
 //  that only run in the kernel have a NULL address space.
 
-class Thread {
+class NachOSThread {
   private:
     // NOTE: DO NOT CHANGE the order of these first two members.
     // THEY MUST be in this position for SWITCH to work.
@@ -81,39 +80,55 @@ class Thread {
     int machineState[MachineStateSize];  // all registers except for stackTop
 
   public:
-    Thread(const char* debugName);		// initialize a Thread 
-    ~Thread(); 				// deallocate a Thread
+    NachOSThread(char* debugName);		// initialize a Thread 
+    ~NachOSThread(); 				// deallocate a Thread
 					// NOTE -- thread being deleted
 					// must not be running when delete 
 					// is called
 
     // basic thread operations
-
-    void Fork(VoidFunctionPtr func, int arg); 	// Make thread run (*func)(arg)
-    void Yield();  				// Relinquish the CPU if any 
+    static int pCount;
+    static int threadCount;
+    void ThreadFork(VoidFunctionPtr func, int arg); 	// Make thread run (*func)(arg)
+    void YieldCPU();  				// Relinquish the CPU if any 
 						// other thread is runnable
-    void Sleep();  				// Put the thread to sleep and 
+    void PutThreadToSleep();  				// Put the thread to sleep and 
 						// relinquish the processor
-    void Finish();  				// The thread is done executing
+    void FinishThread();  				// The thread is done executing
     
     void CheckOverflow();   			// Check if thread has 
 						// overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
-    const char* getName() { return (name); }
+    char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
 
+    int getPID();
+    int getPPID();
+    NachOSThread *parent;
+    int numInst;
+    int Child_Status[40];
+
+    int Child_ReturnValues[40];
+
+    int NumberOfChildren;
+
+    int WaitingFor;
+
+    List *ChildThreadPointer;
+
+    void ThreadStackAllocate(VoidFunctionPtr func, int arg);
+                        // Allocate a stack for thread.
+                    // Used internally by ThreadFork()
   private:
     // some of the private data for this class is listed above
     
     int* stack; 	 		// Bottom of the stack 
 					// NULL if this is the main thread
 					// (If NULL, don't deallocate stack)
-    ThreadStatus status;		// ready, running or blocked
-    const char* name;
+    char* name;
+    ThreadStatus status;
 
-    void StackAllocate(VoidFunctionPtr func, int arg);
-    					// Allocate a stack for thread.
-					// Used internally by Fork()
+    int pid, ppid;			// My pid and my parent's pid
 
 #ifdef USER_PROGRAM
 // A thread running a user program actually has *two* sets of CPU registers -- 
@@ -137,10 +152,11 @@ extern "C" {
 //   	enable interrupts
 //	call "func"
 //	(when func returns, if ever) call ThreadFinish()
-void ThreadRoot();
+void _ThreadRoot();
 
 // Stop running oldThread and start running newThread
-void SWITCH(Thread *oldThread, Thread *newThread);
+void _SWITCH(NachOSThread *oldThread, NachOSThread *newThread);
 }
 
+void myFunction(int arg);
 #endif // THREAD_H

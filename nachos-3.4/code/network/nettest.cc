@@ -35,8 +35,8 @@ MailTest(int farAddr)
 {
     PacketHeader outPktHdr, inPktHdr;
     MailHeader outMailHdr, inMailHdr;
-    const char *data = "Hello there!";
-    const char *ack = "Got it!";
+    char *data = "Hello there!";
+    char *ack = "Got it!";
     char buffer[MaxMailSize];
 
     // construct packet, mail header for original message

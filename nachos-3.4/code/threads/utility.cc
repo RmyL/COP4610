@@ -17,11 +17,11 @@
 #ifdef HOST_SPARC
 #include <stdarg.h>
 #else
-#include "stdarg.h"
+#include <stdarg.h>
 #endif
 #endif
 
-static const char *enableFlags = NULL; // controls which DEBUG messages are printed 
+static char *enableFlags = NULL; // controls which DEBUG messages are printed 
 
 //----------------------------------------------------------------------
 // DebugInit
@@ -34,7 +34,8 @@ static const char *enableFlags = NULL; // controls which DEBUG messages are prin
 //		to be enabled.
 //----------------------------------------------------------------------
 
-void DebugInit(const char *flagList)
+void
+DebugInit(char *flagList)
 {
     enableFlags = flagList;
 }
@@ -61,7 +62,7 @@ DebugIsEnabled(char flag)
 //----------------------------------------------------------------------
 
 void 
-DEBUG(const char flag, const char *format, ...)
+DEBUG(char flag, char *format, ...)
 {
     if (DebugIsEnabled(flag)) {
 	va_list ap;

@@ -11,14 +11,19 @@
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
 
-Thread *currentThread;			// the thread we are running now
-Thread *threadToBeDestroyed;  		// the thread that just finished
+NachOSThread *currentThread;			// the thread we are running now
+NachOSThread *threadToBeDestroyed;  		// the thread that just finished
 Scheduler *scheduler;			// the ready list
 Interrupt *interrupt;			// interrupt status
 Statistics *stats;			// performance metrics
 Timer *timer;				// the hardware timer device,
 					// for invoking context switches
 
+List *SleepingQueue; //This list maintains all the processes that are currently in sleep state
+                    //Implementation of Type List can be found in list.h && list.cc
+                    //Pleae proceed to TimerInterruptHandler(). It needs some serious working to be done.
+
+List *WaitingQueue; //This list maintains all the process that are currently currently waiting for termination of any of his childs.
 #ifdef FILESYS_NEEDED
 FileSystem  *fileSystem;
 #endif
@@ -35,6 +40,7 @@ Machine *machine;	// user program memory and registers
 PostOffice *postOffice;
 #endif
 
+bool initializedConsoleSemaphores;
 
 // External definition, to allow us to take a pointer to this function
 extern void Cleanup();
@@ -47,11 +53,11 @@ extern void Cleanup();
 //	This routine is called each time there is a timer interrupt,
 //	with interrupts disabled.
 //
-//	Note that instead of calling Yield() directly (which would
+//	Note that instead of calling YieldCPU() directly (which would
 //	suspend the interrupt handler, not the interrupted thread
 //	which is what we wanted to context switch), we set a flag
 //	so that once the interrupt handler is done, it will appear as 
-//	if the interrupted thread called Yield at the point it is 
+//	if the interrupted thread called YieldCPU at the point it is 
 //	was interrupted.
 //
 //	"dummy" is because every interrupt handler takes one argument,
@@ -61,9 +67,22 @@ static void
 TimerInterruptHandler(int dummy)
 {
     if (interrupt->getStatus() != IdleMode)
-	interrupt->YieldOnReturn();
-}
+     interrupt->YieldOnReturn();
 
+    if(SleepingQueue->IsEmpty()){
+        //Do Nothing when Timer Ticks
+        return;
+    }
+    else{
+    //	int *keyPtr;
+        //Loop over the SleepingQueue for Valid Candidates that can be joined to the ready queue
+        while(!SleepingQueue->IsEmpty() && SleepingQueue->First() <= stats->totalTicks){
+            
+            scheduler->ReadyToRun((NachOSThread *)SleepingQueue->SortedRemove(NULL));
+            //Method as defined in scheduler.cc 
+        }
+    }
+}
 //----------------------------------------------------------------------
 // Initialize
 // 	Initialize Nachos global data structures.  Interpret command
@@ -78,8 +97,10 @@ void
 Initialize(int argc, char **argv)
 {
     int argCount;
-    const char* debugArgs = "";
+    char* debugArgs = "";
     bool randomYield = FALSE;
+
+    initializedConsoleSemaphores = false;
 
 #ifdef USER_PROGRAM
     bool debugUserProg = FALSE;	// single step user program
@@ -133,15 +154,16 @@ Initialize(int argc, char **argv)
     stats = new Statistics();			// collect statistics
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
-    if (randomYield)				// start the timer (if needed)
+    //if (randomYield)				// start the timer (if needed)
 	timer = new Timer(TimerInterruptHandler, 0, randomYield);
-
+    SleepingQueue = new List();  //Global Intialisation of SleepingQueue.
+    WaitingQueue = new List();  
     threadToBeDestroyed = NULL;
 
     // We didn't explicitly allocate the current thread we are running in.
     // But if it ever tries to give up the CPU, we better have a Thread
     // object to save its state. 
-    currentThread = new Thread("main");		
+    currentThread = new NachOSThread("main");		
     currentThread->setStatus(RUNNING);
 
     interrupt->Enable();

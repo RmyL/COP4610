@@ -1,12 +1,12 @@
 // thread.cc 
 //	Routines to manage threads.  There are four main operations:
 //
-//	Fork -- create a thread to run a procedure concurrently
+//	ThreadFork -- create a thread to run a procedure concurrently
 //		with the caller (this is done in two steps -- first
-//		allocate the Thread object, then call Fork on it)
+//		allocate the Thread object, then call ThredFork on it)
 //	Finish -- called when the forked procedure finishes, to clean up
-//	Yield -- relinquish control over the CPU to another ready thread
-//	Sleep -- relinquish control over the CPU, but thread is now blocked.
+//	YieldCPU -- relinquish control over the CPU to another ready thread
+//	PutThreadToSleep -- relinquish control over the CPU, but thread is now blocked.
 //		In other words, it will not run again, until explicitly 
 //		put back on the ready queue.
 //
@@ -19,32 +19,76 @@
 #include "switch.h"
 #include "synch.h"
 #include "system.h"
-
+#include "machine.h"
 #define STACK_FENCEPOST 0xdeadbeef	// this is put at the top of the
 					// execution stack, for detecting 
 					// stack overflows
 
 //----------------------------------------------------------------------
-// Thread::Thread
+// NachOSThread::NachOSThread
 // 	Initialize a thread control block, so that we can then call
-//	Thread::Fork.
+//	NachOSThread::ThreadFork.
 //
 //	"threadName" is an arbitrary string, useful for debugging.
 //----------------------------------------------------------------------
 
-Thread::Thread(const char* threadName)
+int NachOSThread::pCount=0;
+int NachOSThread::threadCount = 0;
+
+NachOSThread::NachOSThread(char* threadName)
 {
-    name = threadName;
+    numInst=0;  //For storing total number of instructions executed by this thread.
+    name = threadName; 
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+    pCount++;  //For incrementing total number of process created till now.
+    threadCount++;  //Stores count of total number of currently executing processes.
+    pid=pCount;
+    WaitingFor=-1;
+    parent=NULL;
+    ChildThreadPointer = new List();        //Stores ThreadPointers of all the childs.
+    int i=0;
+    for(i=0;i<40;i++) Child_Status[i]=-1;
+    NumberOfChildren=0;
+    if(pid == 1) {
+        ppid = 0;
+    } else {
+        ppid = currentThread->getPID();
+    }
+
 #ifdef USER_PROGRAM
     space = NULL;
 #endif
 }
 
+
 //----------------------------------------------------------------------
-// Thread::~Thread
+// NachOSThread:getPID
+// returns the PID of the current thread
+//----------------------------------------------------------------------
+
+int NachOSThread::getPID()
+{
+    return pid;
+}
+
+//----------------------------------------------------------------------
+// NachOSThread:getPPID
+// returns the PPID of the current thread
+//----------------------------------------------------------------------
+
+int NachOSThread::getPPID()
+{
+    if(currentThread->parent==NULL)
+        ppid=0;
+    return ppid;
+}
+
+
+
+//----------------------------------------------------------------------
+// NachOSThread::~NachOSThread
 // 	De-allocate a thread.
 //
 // 	NOTE: the current thread *cannot* delete itself directly,
@@ -55,7 +99,7 @@ Thread::Thread(const char* threadName)
 //      as part of starting up Nachos.
 //----------------------------------------------------------------------
 
-Thread::~Thread()
+NachOSThread::~NachOSThread()
 {
     DEBUG('t', "Deleting thread \"%s\"\n", name);
 
@@ -65,7 +109,7 @@ Thread::~Thread()
 }
 
 //----------------------------------------------------------------------
-// Thread::Fork
+// NachOSThread::ThreadFork
 // 	Invoke (*func)(arg), allowing caller and callee to execute 
 //	concurrently.
 //
@@ -85,12 +129,12 @@ Thread::~Thread()
 //----------------------------------------------------------------------
 
 void 
-Thread::Fork(VoidFunctionPtr func, int arg)
+NachOSThread::ThreadFork(VoidFunctionPtr func, int arg)
 {
     DEBUG('t', "Forking thread \"%s\" with func = 0x%x, arg = %d\n",
 	  name, (int) func, arg);
     
-    StackAllocate(func, arg);
+    ThreadStackAllocate(func, arg);
 
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     scheduler->ReadyToRun(this);	// ReadyToRun assumes that interrupts 
@@ -99,7 +143,7 @@ Thread::Fork(VoidFunctionPtr func, int arg)
 }    
 
 //----------------------------------------------------------------------
-// Thread::CheckOverflow
+// NachOSThread::CheckOverflow
 // 	Check a thread's stack to see if it has overrun the space
 //	that has been allocated for it.  If we had a smarter compiler,
 //	we wouldn't need to worry about this, but we don't.
@@ -114,18 +158,18 @@ Thread::Fork(VoidFunctionPtr func, int arg)
 //----------------------------------------------------------------------
 
 void
-Thread::CheckOverflow()
+NachOSThread::CheckOverflow()
 {
     if (stack != NULL)
 #ifdef HOST_SNAKE			// Stacks grow upward on the Snakes
 	ASSERT(stack[StackSize - 1] == STACK_FENCEPOST);
 #else
-	ASSERT((int) *stack == (int) STACK_FENCEPOST);
+	ASSERT(*stack == STACK_FENCEPOST);
 #endif
 }
 
 //----------------------------------------------------------------------
-// Thread::Finish
+// NachOSThread::FinishThread
 // 	Called by ThreadRoot when a thread is done executing the 
 //	forked procedure.
 //
@@ -141,20 +185,27 @@ Thread::CheckOverflow()
 
 //
 void
-Thread::Finish ()
+NachOSThread::FinishThread ()
 {
     (void) interrupt->SetLevel(IntOff);		
     ASSERT(this == currentThread);
-    
+    //printf("destroying thread\n");
     DEBUG('t', "Finishing thread \"%s\"\n", getName());
-    
     threadToBeDestroyed = currentThread;
-    Sleep();					// invokes SWITCH
+    if(threadCount>1){
+    //  printf("destroying thread again\n");
+
+        threadCount--;
+        PutThreadToSleep();
+    }
+    else
+    	Cleanup();
+	// invokes SWITCH
     // not reached
 }
 
 //----------------------------------------------------------------------
-// Thread::Yield
+// NachOSThread::YieldCPU
 // 	Relinquish the CPU if any other thread is ready to run.
 //	If so, put the thread on the end of the ready list, so that
 //	it will eventually be re-scheduled.
@@ -168,13 +219,13 @@ Thread::Finish ()
 //	atomically.  On return, we re-set the interrupt level to its
 //	original state, in case we are called with interrupts disabled. 
 //
-// 	Similar to Thread::Sleep(), but a little different.
+// 	Similar to NachOSThread::PutThreadToSleep(), but a little different.
 //----------------------------------------------------------------------
 
 void
-Thread::Yield ()
+NachOSThread::YieldCPU ()
 {
-    Thread *nextThread;
+    NachOSThread *nextThread;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     
     ASSERT(this == currentThread);
@@ -190,7 +241,7 @@ Thread::Yield ()
 }
 
 //----------------------------------------------------------------------
-// Thread::Sleep
+// NachOSThread::PutThreadToSleep
 // 	Relinquish the CPU, because the current thread is blocked
 //	waiting on a synchronization variable (Semaphore, Lock, or Condition).
 //	Eventually, some thread will wake this thread up, and put it
@@ -209,19 +260,19 @@ Thread::Yield ()
 //	off the ready list, and switching to it.
 //----------------------------------------------------------------------
 void
-Thread::Sleep ()
+NachOSThread::PutThreadToSleep ()
 {
-    Thread *nextThread;
-    
+    NachOSThread *nextThread;
+     //printf("Yes fa\n");
     ASSERT(this == currentThread);
     ASSERT(interrupt->getLevel() == IntOff);
     
     DEBUG('t', "Sleeping thread \"%s\"\n", getName());
 
-    status = BLOCKED;
+    status = BLOCKED; 
     while ((nextThread = scheduler->FindNextToRun()) == NULL)
 	interrupt->Idle();	// no one to run, wait for an interrupt
-        
+       
     scheduler->Run(nextThread); // returns when we've been signalled
 }
 
@@ -233,24 +284,24 @@ Thread::Sleep ()
 //	member function.
 //----------------------------------------------------------------------
 
-static void ThreadFinish()    { currentThread->Finish(); }
+static void ThreadFinish()    { currentThread->FinishThread(); }
 static void InterruptEnable() { interrupt->Enable(); }
-void ThreadPrint(int arg){ Thread *t = (Thread *)arg; t->Print(); }
+void ThreadPrint(int arg){ NachOSThread *t = (NachOSThread *)arg; t->Print(); }
 
 //----------------------------------------------------------------------
-// Thread::StackAllocate
+// NachOSThread::ThreadStackAllocate
 //	Allocate and initialize an execution stack.  The stack is
 //	initialized with an initial stack frame for ThreadRoot, which:
 //		enables interrupts
 //		calls (*func)(arg)
-//		calls Thread::Finish
+//		calls NachOSThread::FinishThread
 //
 //	"func" is the procedure to be forked
 //	"arg" is the parameter to be passed to the procedure
 //----------------------------------------------------------------------
 
 void
-Thread::StackAllocate (VoidFunctionPtr func, int arg)
+NachOSThread::ThreadStackAllocate (VoidFunctionPtr func, int arg)
 {
     stack = (int *) AllocBoundedArray(StackSize * sizeof(int));
 
@@ -270,13 +321,13 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
     // SWITCH() to go to ThreadRoot when we switch to this thread, the
     // return addres used in SWITCH() must be the starting address of
     // ThreadRoot.
-    *(--stackTop) = (int)ThreadRoot;
+    *(--stackTop) = (int)_ThreadRoot;
 #endif
 #endif  // HOST_SPARC
     *stack = STACK_FENCEPOST;
 #endif  // HOST_SNAKE
     
-    machineState[PCState] = (int) ThreadRoot;
+    machineState[PCState] = (int) _ThreadRoot;
     machineState[StartupPCState] = (int) InterruptEnable;
     machineState[InitialPCState] = (int) func;
     machineState[InitialArgState] = arg;
@@ -284,10 +335,10 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
 }
 
 #ifdef USER_PROGRAM
-#include "machine.h"
+
 
 //----------------------------------------------------------------------
-// Thread::SaveUserState
+// NachOSThread::SaveUserState
 //	Save the CPU state of a user program on a context switch.
 //
 //	Note that a user program thread has *two* sets of CPU registers -- 
@@ -296,14 +347,14 @@ Thread::StackAllocate (VoidFunctionPtr func, int arg)
 //----------------------------------------------------------------------
 
 void
-Thread::SaveUserState()
+NachOSThread::SaveUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	userRegisters[i] = machine->ReadRegister(i);
 }
 
 //----------------------------------------------------------------------
-// Thread::RestoreUserState
+// NachOSThread::RestoreUserState
 //	Restore the CPU state of a user program on a context switch.
 //
 //	Note that a user program thread has *two* sets of CPU registers -- 
@@ -312,9 +363,33 @@ Thread::SaveUserState()
 //----------------------------------------------------------------------
 
 void
-Thread::RestoreUserState()
+NachOSThread::RestoreUserState()
 {
     for (int i = 0; i < NumTotalRegs; i++)
 	machine->WriteRegister(i, userRegisters[i]);
 }
 #endif
+
+void myFunction(int arg){
+    DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());
+
+    // If the old thread gave up the processor because it was finishing,
+    // we need to delete its carcass.  Note we cannot delete the thread
+    // before now (for example, in NachOSThread::FinishThread()), because up to this
+    // point, we were still running on the old thread's stack!
+    if (threadToBeDestroyed != NULL) {
+        delete threadToBeDestroyed;
+    threadToBeDestroyed = NULL;
+    }
+    
+    #ifdef USER_PROGRAM
+        if (currentThread->space != NULL) {     // if there is an address space
+            currentThread->RestoreUserState();     // to restore, do it.
+        currentThread->space->RestoreState();
+        
+        }
+
+        machine->Run();
+    #endif
+        
+}

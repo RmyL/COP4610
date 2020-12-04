@@ -44,7 +44,7 @@
  * pass values into ThreadRoot (for instance, containing the procedure
  * for the thread to run).  The first set is the registers as used
  * by ThreadRoot; the second set is the locations for these initial
- * values in the Thread object -- used in Thread::AllocateStack().
+ * values in the Thread object -- used in NachOSThread::AllocateStack().
  */
 
 #define InitialPC	s0
@@ -138,7 +138,7 @@
 #define _EDI     28
 #define _PC      32
 
-/* These definitions are used in Thread::AllocateStack(). */
+/* These definitions are used in NachOSThread::AllocateStack(). */
 #define PCState         (_PC/4-1)
 #define FPState         (_EBP/4-1)
 #define InitialPCState  (_ESI/4-1)

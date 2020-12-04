@@ -172,7 +172,7 @@ FileSystem::FileSystem(bool format)
 //----------------------------------------------------------------------
 
 bool
-FileSystem::Create(const char *name, int initialSize)
+FileSystem::Create(char *name, int initialSize)
 {
     Directory *directory;
     BitMap *freeMap;
@@ -225,7 +225,7 @@ FileSystem::Create(const char *name, int initialSize)
 //----------------------------------------------------------------------
 
 OpenFile *
-FileSystem::Open(const char *name)
+FileSystem::Open(char *name)
 { 
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
@@ -255,7 +255,7 @@ FileSystem::Open(const char *name)
 //----------------------------------------------------------------------
 
 bool
-FileSystem::Remove(const char *name)
+FileSystem::Remove(char *name)
 { 
     Directory *directory;
     BitMap *freeMap;

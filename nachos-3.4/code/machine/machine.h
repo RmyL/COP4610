@@ -32,7 +32,7 @@
 					// the disk sector size, for
 					// simplicity
 
-#define NumPhysPages    32
+#define NumPhysPages    1024  //Increased the value of maximum total physical pages allocated to processes.
 #define MemorySize 	(NumPhysPages * PageSize)
 #define TLBSize		4		// if there is a TLB, make it small
 
@@ -84,10 +84,10 @@ class Instruction {
 
     unsigned int value; // binary representation of the instruction
 
-    unsigned int opCode;     // Type of instruction.  This is NOT the same as the
+    char opCode;     // Type of instruction.  This is NOT the same as the
     		     // opcode field from the instruction: see defs in mips.h
-    unsigned int rs, rt, rd; // Three registers from instruction.
-    unsigned int extra;       // Immediate or target or shamt field or offset.
+    char rs, rt, rd; // Three registers from instruction.
+    int extra;       // Immediate or target or shamt field or offset.
                      // Immediates are sign-extended.
 };
 
@@ -155,7 +155,7 @@ class Machine {
 
     char *mainMemory;		// physical memory to store user program,
 				// code and data, while executing
-    unsigned int registers[NumTotalRegs]; // CPU registers, for executing user programs
+    int registers[NumTotalRegs]; // CPU registers, for executing user programs
 
 
 // NOTE: the hardware translation of virtual addresses in the user program

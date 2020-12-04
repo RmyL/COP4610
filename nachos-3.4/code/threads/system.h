@@ -22,12 +22,15 @@ extern void Initialize(int argc, char **argv); 	// Initialization,
 extern void Cleanup();				// Cleanup, called when
 						// Nachos is done.
 
-extern Thread *currentThread;			// the thread holding the CPU
-extern Thread *threadToBeDestroyed;  		// the thread that just finished
+extern NachOSThread *currentThread;			// the thread holding the CPU
+extern NachOSThread *threadToBeDestroyed;  		// the thread that just finished
 extern Scheduler *scheduler;			// the ready list
 extern Interrupt *interrupt;			// interrupt status
 extern Statistics *stats;			// performance metrics
 extern Timer *timer;				// the hardware alarm clock
+extern List *SleepingQueue;
+extern List *WaitingQueue;
+extern bool initializedConsoleSemaphores;       // Used to initialize the semaphores for console I/O exactly once
 
 #ifdef USER_PROGRAM
 #include "machine.h"

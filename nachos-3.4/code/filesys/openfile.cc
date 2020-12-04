@@ -15,9 +15,6 @@
 #include "filehdr.h"
 #include "openfile.h"
 #include "system.h"
-#ifdef HOST_SPARC
-#include <strings.h>
-#endif
 
 //----------------------------------------------------------------------
 // OpenFile::OpenFile
@@ -72,7 +69,7 @@ OpenFile::Seek(int position)
 //----------------------------------------------------------------------
 
 int
-OpenFile::Read(const char *into, int numBytes)
+OpenFile::Read(char *into, int numBytes)
 {
    int result = ReadAt(into, numBytes, seekPosition);
    seekPosition += result;
@@ -80,7 +77,7 @@ OpenFile::Read(const char *into, int numBytes)
 }
 
 int
-OpenFile::Write(const char *into, int numBytes)
+OpenFile::Write(char *into, int numBytes)
 {
    int result = WriteAt(into, numBytes, seekPosition);
    seekPosition += result;
@@ -114,7 +111,7 @@ OpenFile::Write(const char *into, int numBytes)
 //----------------------------------------------------------------------
 
 int
-OpenFile::ReadAt(const char *into, int numBytes, int position)
+OpenFile::ReadAt(char *into, int numBytes, int position)
 {
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
@@ -138,13 +135,13 @@ OpenFile::ReadAt(const char *into, int numBytes, int position)
 					&buf[(i - firstSector) * SectorSize]);
 
     // copy the part we want
-    bcopy(&buf[position - (firstSector * SectorSize)], (char*)into, numBytes);
+    bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
     delete [] buf;
     return numBytes;
 }
 
 int
-OpenFile::WriteAt(const char *from, int numBytes, int position)
+OpenFile::WriteAt(char *from, int numBytes, int position)
 {
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;

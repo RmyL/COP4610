@@ -84,11 +84,11 @@ ExceptionHandler(ExceptionType which)
     }
     Console *console = new Console(NULL, NULL, ReadAvail, WriteDone, 0);;
 
-    if ((which == SyscallException) && (type == syscall_Halt)) {
+    if ((which == SyscallException) && (type ==  SC_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
     }
-    else if ((which == SyscallException) && (type == syscall_PrintInt)) {
+    else if ((which == SyscallException) && (type ==  SC_PrintInt)) {
        printval = machine->ReadRegister(4);
        if (printval == 0) {
 	  writeDone->P() ;
@@ -119,7 +119,7 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
-    else if ((which == SyscallException) && (type == syscall_PrintChar)) {
+    else if ((which == SyscallException) && (type ==  SC_PrintChar)) {
 	writeDone->P() ;
         console->PutChar(machine->ReadRegister(4));   // echo it!
        // Advance program counters.
@@ -127,7 +127,7 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
-    else if ((which == SyscallException) && (type == syscall_PrintString)) {
+    else if ((which == SyscallException) && (type ==  SC_PrintString)) {
        vaddr = machine->ReadRegister(4);
        machine->ReadMem(vaddr, 1, &memval);
        while ((*(char*)&memval) != '\0') {
@@ -141,7 +141,7 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
-    else if ((which == SyscallException) && (type == syscall_PrintIntHex)) {
+    else if ((which == SyscallException) && (type ==  SC_PrintIntHex)) {
        printvalus = (unsigned)machine->ReadRegister(4);
        writeDone->P() ;
        console->PutChar('0');
@@ -160,14 +160,14 @@ ExceptionHandler(ExceptionType which)
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     } 
 
-    else if((which == SyscallException) && (type == syscall_GetReg)){
+    else if((which == SyscallException) && (type ==  SC_GetReg)){
        machine->WriteRegister(2,machine->ReadRegister(machine->ReadRegister(4)));
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4); 
     }
 
-    else if((which == SyscallException) && (type == syscall_GetPA)){
+    else if((which == SyscallException) && (type ==  SC_GetPA)){
       unsigned virtAddress = machine->ReadRegister(4);
       unsigned vpn = (unsigned)virtAddress/PageSize;
 
@@ -202,7 +202,7 @@ ExceptionHandler(ExceptionType which)
       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
 
-    else if((which == SyscallException) && (type == syscall_Time)){
+    else if((which == SyscallException) && (type ==  SC_Time)){
       machine->WriteRegister(2,stats->totalTicks);
       //stats is a global variable of class Statistics(see stats.h) which has been declared in code/threads/System.h and system.cc. please refer
       //Refer to machine/interrupt.cc to see how stats->totalticks works! Line 155 to be precise :P
@@ -216,7 +216,7 @@ ExceptionHandler(ExceptionType which)
 
 
     //Implementation of GetPID and GetPPID from thread.cc and thread.h? Confused :(
-    else if ((which == SyscallException) && (type == syscall_GetPID)) {
+    else if ((which == SyscallException) && (type ==  SC_GetPID)) {
         machine->WriteRegister(2, currentThread->getPID());
 
         // Advance program counters
@@ -224,7 +224,7 @@ ExceptionHandler(ExceptionType which)
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     } 
-    else if ((which == SyscallException) && (type == syscall_GetPPID)) {
+    else if ((which == SyscallException) && (type ==  SC_GetPPID)) {
         machine->WriteRegister(2, currentThread->getPPID());
 
         // Advance program counters
@@ -234,7 +234,7 @@ ExceptionHandler(ExceptionType which)
     }
     //Hehehehe IKR its!
 
-    else if((which == SyscallException) && (type == syscall_Yield)){
+    else if((which == SyscallException) && (type ==  SC_Yield)){
       // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
@@ -244,7 +244,7 @@ ExceptionHandler(ExceptionType which)
         currentThread->YieldCPU();
     }
 
-    else if((which == SyscallException) && (type == syscall_Sleep)){
+    else if((which == SyscallException) && (type ==  SC_Sleep)){
       // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
@@ -270,7 +270,7 @@ ExceptionHandler(ExceptionType which)
         }
     }
 
-    else if((which == SyscallException) && (type == syscall_Fork)){
+    else if((which == SyscallException) && (type ==  SC_Fork)){
       // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
@@ -306,7 +306,7 @@ ExceptionHandler(ExceptionType which)
         //printf("Returning control to raw programs\n");
         
     }
-    else if((which == SyscallException) && (type == syscall_Exec)){
+    else if((which == SyscallException) && (type ==  SC_Exec)){
         //I assume there is something called filename :(
         //where do I find
 
@@ -343,7 +343,7 @@ delete executable;
         machine->Run();
         ASSERT(FALSE);
     }
-    else if((which == SyscallException) && (type == syscall_Exit)){
+    else if((which == SyscallException) && (type ==  SC_Exit)){
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         
@@ -363,7 +363,7 @@ delete executable;
 
         currentThread->FinishThread();
     }
-    else if((which == SyscallException) && (type == syscall_Join)){
+    else if((which == SyscallException) && (type ==  SC_Join)){
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         
@@ -385,7 +385,7 @@ delete executable;
         }
 
     }
-    else if((which == SyscallException) && (type == syscall_NumInstr)){
+    else if((which == SyscallException) && (type ==  SC_NumInstr)){
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         

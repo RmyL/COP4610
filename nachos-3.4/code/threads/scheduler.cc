@@ -51,7 +51,7 @@ Scheduler::~Scheduler()
 //----------------------------------------------------------------------
 
 void
-Scheduler::ReadyToRun (Thread *thread)
+Scheduler::ReadyToRun (NachOSThread *thread)
 {
     DEBUG('t', "Putting thread %s on ready list.\n", thread->getName());
 
@@ -67,10 +67,10 @@ Scheduler::ReadyToRun (Thread *thread)
 //	Thread is removed from the ready list.
 //----------------------------------------------------------------------
 
-Thread *
+NachOSThread *
 Scheduler::FindNextToRun ()
 {
-    return (Thread *)readyList->Remove();
+    return (NachOSThread *)readyList->Remove();
 }
 
 //----------------------------------------------------------------------
@@ -88,9 +88,9 @@ Scheduler::FindNextToRun ()
 //----------------------------------------------------------------------
 
 void
-Scheduler::Run (Thread *nextThread)
+Scheduler::Run (NachOSThread *nextThread)
 {
-    Thread *oldThread = currentThread;
+    NachOSThread *oldThread = currentThread;
     
 #ifdef USER_PROGRAM			// ignore until running user programs 
     if (currentThread->space != NULL) {	// if this thread is a user program,
@@ -113,13 +113,13 @@ Scheduler::Run (Thread *nextThread)
     // a bit to figure out what happens after this, both from the point
     // of view of the thread and from the perspective of the "outside world".
 
-    SWITCH(oldThread, nextThread);
+    _SWITCH(oldThread, nextThread);
     
     DEBUG('t', "Now in thread \"%s\"\n", currentThread->getName());
 
     // If the old thread gave up the processor because it was finishing,
     // we need to delete its carcass.  Note we cannot delete the thread
-    // before now (for example, in Thread::Finish()), because up to this
+    // before now (for example, in NachOSThread::FinishThread()), because up to this
     // point, we were still running on the old thread's stack!
     if (threadToBeDestroyed != NULL) {
         delete threadToBeDestroyed;

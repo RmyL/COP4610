@@ -53,18 +53,10 @@
 #include "utility.h"
 #include "system.h"
 
-#ifdef THREADS
-extern int testnum;
-#endif
 
 // External functions used by this file
-// HW1 ELEVATORS
-#if defined(HW1_ELEVATOR)
-extern void Elevator(int numFloors);
-extern void ArrivingGoingFromTo(int atFloor, int toFloor);
-#endif
-extern void waiterTest(void);
-extern void ThreadTest(int), Copy(char *unixFile, char *nachosFile);
+
+extern void ThreadTest(void), Copy(char *unixFile, char *nachosFile);
 extern void Print(char *file), PerformanceTest(void);
 extern void StartProcess(char *file), ConsoleTest(char *in, char *out);
 extern void MailTest(int networkID);
@@ -84,52 +76,22 @@ extern void MailTest(int networkID);
 //----------------------------------------------------------------------
 
 int
-main(int argc, char** argv)
+main(int argc, char **argv)
 {
-	int argCount;			// the number of arguments 
+    int argCount;			// the number of arguments 
 					// for a particular command
 
-	DEBUG('t', "Entering main");
-	(void)Initialize(argc, argv);
-
+    DEBUG('t', "Entering main");
+    (void) Initialize(argc, argv);
+    
 #ifdef THREADS
-	for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
-		argCount = 1;
-		switch (argv[0][1]) {
-		case 'q':
-			testnum = atoi(argv[1]);
-			argCount++;
-			break;
-		default:
-			testnum = 1;
-			break;
-		}
-	}
-
-	#ifdef HW1_LOCKS
-	ThreadTest(1);
-	#endif
-
-	#ifdef HW1_SEMAPHORES
-	ThreadTest(2);
-	#endif
-
-	#ifdef HW1_ELEVATOR
-    Elevator(30);
-    ArrivingGoingFromTo(1, 4);
-    ArrivingGoingFromTo(1, 4);
-    ArrivingGoingFromTo(1, 3);
-    ArrivingGoingFromTo(1, 6);
-    ArrivingGoingFromTo(1, 9);
-    ArrivingGoingFromTo(30, 1);
-	#endif
-
+    ThreadTest();
 #endif
 
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright
-            printf ("%s",copyright);
+            printf (copyright);
 #ifdef USER_PROGRAM
         if (!strcmp(*argv, "-x")) {        	// run a user program
 	    ASSERT(argc > 1);
@@ -181,7 +143,7 @@ main(int argc, char** argv)
 #endif // NETWORK
     }
 
-    currentThread->Finish();	// NOTE: if the procedure "main" 
+    currentThread->FinishThread();	// NOTE: if the procedure "main" 
 				// returns, then the program "nachos"
 				// will exit (as any other normal program
 				// would).  But there may be other

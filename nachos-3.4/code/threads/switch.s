@@ -35,7 +35,7 @@
  All rights reserved.  See copyright.h for copyright notice and limitation 
  of liability and disclaimer of warranty provisions.
  */
-	
+
 #include "copyright.h"
 #include "switch.h"
 
@@ -70,7 +70,7 @@ ThreadRoot:
 	jal	StartupPC	# call startup procedure
 	move	a0, InitialArg
 	jal	InitialPC	# call main procedure
-	jal 	WhenDonePC	# when were done, call clean up procedure
+	jal 	WhenDonePC	# when we're done, call clean up procedure
 
 	# NEVER REACHED
 	.end ThreadRoot
@@ -106,31 +106,28 @@ SWITCH:
 
 	j	ra
 	.end SWITCH
+#endif /*HOST_MIPS*/
 
-#endif
 #ifdef HOST_SPARC
 
 /* NOTE!  These files appear not to exist on Solaris --
  *  you need to find where (the SPARC-specific) MINFRAME, ST_FLUSH_WINDOWS, ...
  *  are defined.  (I don't have a Solaris machine, so I have no way to tell.)
  */
-/* From sys/trap.h and sys/asm_linkage.h */
-#include <sys/trap.h>
-#define _ASM
-#include <sys/stack.h>
-		
+#include <sun4/trap.h>
+#include <sun4/asm_linkage.h>
 .seg    "text"
 
 /* SPECIAL to the SPARC:
  *	The first two instruction of ThreadRoot are skipped because
  *	the address of ThreadRoot is made the return address of SWITCH()
- *	by the routine Thread::StackAllocate.  SWITCH() jumps here on the
+ *	by the routine NachOSThread::ThreadStackAllocate.  SWITCH() jumps here on the
  *	"ret" instruction which is really at "jmp %o7+8".  The 8 skips the
  *	two nops at the beginning of the routine.
  */
 
-.globl	ThreadRoot
-ThreadRoot:
+.globl	_ThreadRoot
+_ThreadRoot:
 	nop  ; nop         /* These 2 nops are skipped because we are called
 			    * with a jmp+8 instruction. */
 	clr	%fp        /* Clearing the frame pointer makes gdb backtraces 
@@ -157,8 +154,8 @@ ThreadRoot:
 	ta	ST_BREAKPOINT
 
 
-.globl	SWITCH
-SWITCH:
+.globl	_SWITCH
+_SWITCH:
 	save	%sp, -SA(MINFRAME), %sp
 	st	%fp, [%i0]
 	st	%i0, [%i0+I0]
@@ -182,9 +179,8 @@ SWITCH:
 	ret
 	restore
 
+#endif /*HOST_SPARC*/
 
-
-#endif
 #ifdef HOST_SNAKE
 
     ;rp = r2,   sp = r30
@@ -271,7 +267,7 @@ SWITCH
         .text
         .align  2
 
-        .globl  ThreadRoot
+        .globl  _ThreadRoot
 
 /* void ThreadRoot( void )
 **
@@ -279,17 +275,17 @@ SWITCH
 **      eax     points to startup function (interrupt enable)
 **      edx     contains inital argument to thread function
 **      esi     points to thread function
-**      edi     point to Thread::Finish()
+**      edi     point to NachOSThread::FinishThread()
 */
-ThreadRoot:
+_ThreadRoot:
         pushl   %ebp
         movl    %esp,%ebp
         pushl   InitialArg
-        call    *StartupPC
-        call    *InitialPC
-        call    *WhenDonePC
+        call    StartupPC
+        call    InitialPC
+        call    WhenDonePC
 
-        /* NOT REACHED */
+        # NOT REACHED
         movl    %ebp,%esp
         popl    %ebp
         ret
@@ -309,8 +305,8 @@ ThreadRoot:
 */
         .comm   _eax_save,4
 
-        .globl  SWITCH
-SWITCH:
+        .globl  _SWITCH
+_SWITCH:
         movl    %eax,_eax_save          # save the value of eax
         movl    4(%esp),%eax            # move pointer to t1 into eax
         movl    %ebx,_EBX(%eax)         # save registers

@@ -10,14 +10,14 @@
 
 # If the host is big endian (SPARC, SNAKE, etc):
 # change to (disassemble and coff2flat don't support big endian yet):
-
-CC=gcc -m32
-# Sparc/Solaris
 # CFLAGS= -I./ -I../threads -DHOST_IS_BIG_ENDIAN
-# Linux
-CFLAGS=-I./ -I../threads -g
+# all: coff2noff
 
-LD=gcc -m32
+CC=gcc
+CFLAGS=-I./ -I../threads
+LD=gcc
+
+#all: coff2noff disassemble 
 
 all: coff2noff
 
@@ -32,3 +32,6 @@ coff2flat: coff2flat.o
 # dis-assembles a COFF file
 disassemble: out.o opstrings.o
 	$(LD) out.o opstrings.o -o disassemble
+
+clean:
+	rm -f coff2noff disassemble coff2noff.o coff2flat.o coff2flat out.o opstrings.o
