@@ -18,29 +18,36 @@
 /* system call codes -- used by the stubs to tell the kernel which system call
  * is being asked for
  */
-#define SC_Halt		0
-#define SC_Exit		1
-#define SC_Exec		2
-#define SC_Join		3
-#define SC_Create	4
-#define SC_Open		5
-#define SC_Read		6
-#define SC_Write	7
-#define SC_Close	8
-#define SC_Fork		9
-#define SC_Yield	10
+#define syscall_Halt		0
+#define syscall_Exit		1
+#define syscall_Exec		2
+#define syscall_Join		3
+#define syscall_Create		4
+#define syscall_Open		5
+#define syscall_Read		6
+#define syscall_Write		7
+#define syscall_Close		8
+#define syscall_Fork		9
+#define syscall_Yield		10
 
-#define SC_PrintInt     11
-#define SC_PrintChar    12
-#define SC_PrintString	13
-#define SC_GetReg		14
-#define SC_GetPA		15
-#define SC_GetPID		16
-#define SC_GetPPID		17
-#define SC_Sleep		18
-#define SC_Time         19
-#define SC_PrintIntHex  20
-#define SC_NumInstr	    50
+// New syscalls defined by Mainak
+
+#define syscall_PrintInt	11
+#define syscall_PrintChar	12
+#define syscall_PrintString	13
+
+#define syscall_GetReg		14
+#define syscall_GetPA		15
+#define syscall_GetPID		16
+#define syscall_GetPPID		17
+
+#define syscall_Sleep		18
+
+#define syscall_Time		19
+
+#define syscall_PrintIntHex  	20
+
+#define syscall_NumInstr	50
 
 #ifndef IN_ASM
 
@@ -55,26 +62,26 @@
  */
 
 /* Stop Nachos, and print out performance stats */
-void Halt();		
+void system_Halt();		
  
 
 /* Address space control operations: Exit, Exec, and Join */
 
 /* This user program is done (status = 0 means exited normally). */
-void Exit(int status);	
+void system_Exit(int status);	
 
 /* A unique identifier for an executing user program (address space) */
+/* This is same as PID. */
 typedef int SpaceId;	
  
-/* Run the executable, stored in the Nachos file "name", and return the 
- * address space identifier
+/* Run the executable, stored in the Nachos file "name"
  */
-SpaceId Exec(char *name);
+void system_Exec(char *name);
  
 /* Only return once the the user program "id" has finished.  
  * Return the exit status.
  */
-int Join(SpaceId id); 	
+int system_Join(SpaceId id); 	
  
 
 /* File system operations: Create, Open, Read, Write, Close
@@ -99,15 +106,15 @@ typedef int OpenFileId;
 #define ConsoleOutput	1  
  
 /* Create a Nachos file, with "name" */
-void Create(char *name);
+void system_Create(char *name);
 
 /* Open the Nachos file "name", and return an "OpenFileId" that can 
  * be used to read and write to the file.
  */
-OpenFileId Open(char *name);
+OpenFileId system_Open(char *name);
 
 /* Write "size" bytes from "buffer" to the open file. */
-void Write(char *buffer, int size, OpenFileId id);
+void system_Write(char *buffer, int size, OpenFileId id);
 
 /* Read "size" bytes from the open file into "buffer".  
  * Return the number of bytes actually read -- if the open file isn't
@@ -115,10 +122,10 @@ void Write(char *buffer, int size, OpenFileId id);
  * characters to read, return whatever is available (for I/O devices, 
  * you should always wait until you can return at least one character).
  */
-int Read(char *buffer, int size, OpenFileId id);
+int system_Read(char *buffer, int size, OpenFileId id);
 
 /* Close the file, we're done reading and writing to it. */
-void Close(OpenFileId id);
+void system_Close(OpenFileId id);
 
 
 
@@ -126,39 +133,38 @@ void Close(OpenFileId id);
  * threads to run within a user program. 
  */
 
-/* Fork a thread to run a procedure ("func") in the *same* address space 
- * as the current thread.
+/* Fork a thread. Returns child pid to parent and zero to child.
  */
-int Fork(void);
+int system_Fork(void);
 
 /* Yield the CPU to another runnable thread, whether in this address space 
  * or not. 
  */
+void system_Yield();		
 
 // New definitions
-void Yield();
 
-void PrintInt (int x);
+void system_PrintInt (int x);
 
-void PrintChar (char x);
+void system_PrintChar (char x);
 
-void PrintString (char *x);
+void system_PrintString (char *x);
 
-void PrintIntHex (int x);
+void system_PrintIntHex (int x);
 
-int GetReg (int regno);
+int system_GetReg (int regno);
 
-int GetPA (unsigned vaddr);
+int system_GetPA (unsigned vaddr);
 
-int GetPID (void);
+int system_GetPID (void);
 
-int GetPPID (void);
+int system_GetPPID (void);
 
-void Sleep (unsigned);
+void system_Sleep (unsigned);
 
-int GetTime (void);
+int system_GetTime (void);
 
-int GetNumInstr (void);
+int system_GetNumInstr (void);
 
 #endif /* IN_ASM */
 

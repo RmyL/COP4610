@@ -1,5 +1,5 @@
-/* halt.c
- *	Simple program to test whether running a user program works.
+/* printtest.c
+ *	Simple program to test whether printing from a user program works.
  *	
  *	Just do a "syscall" that shuts down the OS.
  *
@@ -15,6 +15,9 @@
 int
 main()
 {
-    system_Halt();
-    /* not reached */
+    system_PrintString("hello world\n");
+    system_PrintString("Executed ");
+    system_PrintInt(system_GetNumInstr());
+    system_PrintString(" instructions.\n");
+    return 0;
 }

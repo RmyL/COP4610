@@ -5,19 +5,19 @@ main()
 {
     int x, i;
 
-    x = Fork();
+    x = system_Fork();
     for (i=0; i<5; i++) {
-       PrintString("*** thread ");
-       PrintInt(system_GetPID());
-       PrintString(" looped ");
-       PrintInt(i);
-       PrintString(" times.\n");
-       Yield();
+       system_PrintString("*** thread ");
+       system_PrintInt(system_GetPID());
+       system_PrintString(" looped ");
+       system_PrintInt(i);
+       system_PrintString(" times.\n");
+       system_Yield();
     }
     if (x != 0) {
-       PrintString("Before join.\n");
-       Join(x);
-       PrintString("After join.\n");
+       system_PrintString("Before join.\n");
+       system_Join(x);
+       system_PrintString("After join.\n");
     }
     return 0;
 }

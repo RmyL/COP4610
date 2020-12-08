@@ -3,8 +3,8 @@
 int
 main()
 {
-    PrintString("Before calling Exec.\n");
-    Exec("../test/vectorsum");
-    PrintString("Returned from Exec.\n");
+    system_PrintString("Before calling Exec.\n");
+    system_Exec("../test/vectorsum");
+    system_PrintString("Returned from Exec.\n"); // Should never return
     return 0;
 }

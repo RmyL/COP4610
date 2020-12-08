@@ -386,7 +386,6 @@ void myFunction(int arg){
         if (currentThread->space != NULL) {     // if there is an address space
             currentThread->RestoreUserState();     // to restore, do it.
         currentThread->space->RestoreState();
-        
         }
 
         machine->Run();

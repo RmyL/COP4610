@@ -16,12 +16,11 @@ by the project description.
 Step 1 implementing fork() and its AddrSpace:
 
 • The Fork(func) system call creates a new user-level (child) process, whose address space
-    starts out as an exact copy of that of the caller (the parent), but immediately the child abandons
+    starts as an exact copy of that of the caller (the parent), but immediately the child abandons
     the program of the parent and starts executing the function supplied by the single argument.
-    Fork should return pid of child process ( SpaceId ). Notice this definition is slightly different from
-    the one in the syscall.h file in Nachos. Also, the semantics is not the same as Unix fork(). After
-    forked function func finishes, the control should go back to the instruction after the initial system
-    call Fork.
+    Fork should return the PID of the child process ( SpaceId ). Notice this definition is slightly 
+    different from the one in the syscall.h file in Nachos. Also, the semantics is not the same as Unix fork(). 
+    After the forked function func finishes, the control should go back to the instruction after the initial system call Fork.
 
 Step 2 Memory Manager:
 
@@ -33,19 +32,19 @@ Step 2 Memory Manager:
     
 Step 3 AddrSpace::Translate function:
 
-    The AddrSpace::Translate converts a virtual addres to a physical addres
+    The AddrSpace::Translate converts a virtual address to a physical address
  
 Step 4 AddrSpace::ReadFile function:
 
     The AddrSpace::ReadFile loads the code and data segments into the translated memory
     instead of at position 0 like the code in AddrSpace constructor already does.
     
-    This is needed for Exec() and for the initial startup of the machine when
+    This is needed for Exec() and the initial startup of the machine when
     executing any test program with virtual memory.
 
 Step 5 PCB and the process manager classes:
 
-    The PCB class will store the nessesary information about a process.
+    The PCB class will store the necessary information about a process.
     
     The process manager does the same thing as the memory manager.
     It has getPID and clearPID methods, which return an unused process id and clear a process id respectively. 
@@ -57,12 +56,11 @@ Step 6 implementing Yield():
 
 Step 7 implementing Exec():
 
-• The Exec(filename) system replaces the current process state with a new process executing
-    program from file . You can think as if the current process stops executing and the new program
-    is loaded in its place. The new program uses the object code from the Nachos object file which 
-    name is supplied as an argument to the call. It should return -1 to the parent if not successful. If
-    successful, the parent process is replaced with the new program running from its beginning. The
-    way to execute a new process without destroying the current one is to first Fork and then Exec.
+• The Exec(filename) system replaces the current process state with a new process executing the program from the file. 
+You can think as if the current process stops executing and the new program is loaded in its place. 
+The new program uses the object code from the Nachos object file which name is supplied as an argument to the call. 
+It should return -1 to the parent if not successful. If successful, the parent process is replaced with the new program running from its beginning. 
+The way to execute a new process without destroying the current one is to first Fork and then Exec.
 
 Step 8 implementing Join():
 
@@ -73,15 +71,15 @@ Step 8 implementing Join():
 
 Step 9 implementing Exit(int status):
 
-• The Exit(int) call takes a single argument, which is an integer status value as in Unix. The
-    currently executing process is terminated. For now, you can just ignore the status value. You
-    need to supply this value to parent process if and when it does a Join() .
+• The Exit(int) call takes a single argument, which is an integer status value as in Unix. The currently executing process is terminated. 
+For now, you can just ignore the status value. You need to supply this value to the parent process if and when it does a Join() .
 
 • The Kill(SpaceId) kills a process with supplied SpaceId. It returns 0 if successful and -1 if not
-    (for example SpaceId is not valid).
+    (for example, SpaceId is not valid).
 
 Step 10 testing the system calls.
 
-
-
+    Tested out system call using ../test/testyield and ../test/testexec
+    doing so I was able to test the system calls joining in before and after a yield.
     
+    Also, testexec executed another program within ../test/vectorsum which just counts executed instructions and displays them on screen.
