@@ -114,15 +114,15 @@ ExceptionHandler(ExceptionType which)
              exp = exp/10;
           }
        }
-       // Advance program counters.
+
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
     else if ((which == SyscallException) && (type ==  SC_PrintChar)) {
 	writeDone->P() ;
-        console->PutChar(machine->ReadRegister(4));   // echo it!
-       // Advance program counters.
+        console->PutChar(machine->ReadRegister(4));
+
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
@@ -136,7 +136,7 @@ ExceptionHandler(ExceptionType which)
           vaddr++;
           machine->ReadMem(vaddr, 1, &memval);
        }
-       // Advance program counters.
+
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
@@ -154,7 +154,7 @@ ExceptionHandler(ExceptionType which)
        else {
           ConvertIntToHex (printvalus, console);
        }
-       // Advance program counters.
+
        machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
        machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
        machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
@@ -171,21 +171,15 @@ ExceptionHandler(ExceptionType which)
       unsigned virtAddress = machine->ReadRegister(4);
       unsigned vpn = (unsigned)virtAddress/PageSize;
 
-      
-      //vpn --- Virtual Page Numer (See translation.cc line:210)
-
-      //The virtual page number is not larger than the number of entries in the page table. 
       if(vpn > machine->pageTableSize){
         machine->WriteRegister(2,-1);     
       }
 
-    //The page table entry has the valid field set to true indicating that the entry holds a valid physical page number.      
       if (!machine->pageTable[vpn].valid)
       {
         machine->WriteRegister(2,-1);
       }
 
-      //The obtained physical page number (physicalPage field of the page table entry) is not larger than the number of physical pages.
       if (machine->pageTable[vpn].physicalPage > NumPhysPages)
       {
         machine->WriteRegister(2,-1);
@@ -196,7 +190,7 @@ ExceptionHandler(ExceptionType which)
         machine->WriteRegister(2,((machine->pageTable[vpn].physicalPage)*PageSize) + (virtAddress%PageSize));
       }
 
-      //Advance Program Counters
+      //
       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
@@ -204,22 +198,17 @@ ExceptionHandler(ExceptionType which)
 
     else if((which == SyscallException) && (type ==  SC_Time)){
       machine->WriteRegister(2,stats->totalTicks);
-      //stats is a global variable of class Statistics(see stats.h) which has been declared in code/threads/System.h and system.cc. please refer
-      //Refer to machine/interrupt.cc to see how stats->totalticks works! Line 155 to be precise :P
 
-      //Advance Program Counters
+      //Counters
       machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
       machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
       machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     
     }
 
-
-    //Implementation of GetPID and GetPPID from thread.cc and thread.h? Confused :(
     else if ((which == SyscallException) && (type ==  SC_GetPID)) {
         machine->WriteRegister(2, currentThread->getPID());
 
-        // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
@@ -227,25 +216,21 @@ ExceptionHandler(ExceptionType which)
     else if ((which == SyscallException) && (type ==  SC_GetPPID)) {
         machine->WriteRegister(2, currentThread->getPPID());
 
-        // Advance program counters
+        //counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
     }
-    //Hehehehe IKR its!
 
     else if((which == SyscallException) && (type ==  SC_Yield)){
-      // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
 
-        //Already present in thread.cc
         currentThread->YieldCPU();
     }
 
     else if((which == SyscallException) && (type ==  SC_Sleep)){
-      // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
@@ -253,16 +238,9 @@ ExceptionHandler(ExceptionType which)
         int WaitTime = machine->ReadRegister(4);
 
         if(WaitTime==0){
-          //This will stop all interuppts when we are handling the sleep of this function
-          //Check interrupts.h for implementation
           currentThread->YieldCPU();
-          //Yield it
-          //Start Interrupts again
         }
         else{
-          //SleepingQueue has been defined, freshly in system.cc as a global variable. system.cc : Line 23 
-          //Its implementation is incomplete. Yet is sufficient for purpose of sleep
-          //Implementation of SortedInsert is present in list.h
           SleepingQueue->SortedInsert((void *)currentThread, stats->totalTicks + WaitTime);
           IntStatus oldlevel=interrupt->SetLevel(IntOff);
           currentThread->PutThreadToSleep();
@@ -271,46 +249,28 @@ ExceptionHandler(ExceptionType which)
     }
 
     else if((which == SyscallException) && (type ==  SC_Fork)){
-      // Advance program counters
         machine->WriteRegister(PrevPCReg, machine->ReadRegister(PCReg));
         machine->WriteRegister(PCReg, machine->ReadRegister(NextPCReg));
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
 
-         //Create a child
         NachOSThread *child = new NachOSThread("Forked Thread");
-        //printf("Succesfully created a new NachOSThread\n");
-        //Initialize the child
         currentThread->ChildThreadPointer->SortedInsert((void *)child,child->getPID());
         child->parent = currentThread;
         currentThread->NumberOfChildren++;
         currentThread->Child_Status[child->getPID()]=1;
-        //Update Parameters in parent
-        //printf("Done with assignment\n");
         child->space=new AddrSpace(currentThread->space->getNumPages(),currentThread->space->getStartPhysPage());
-        //printf("Succesfully created a new AddrSpace\n");
         machine->WriteRegister(2,0);
-        child->SaveUserState(); //LOL
+        child->SaveUserState(); 
 
         machine->WriteRegister(2,child->getPID());
 
-        //Allocate a stack to child
         child->ThreadStackAllocate(&myFunction,0);
-        //But how?
-        //printf("Succesfully Allocated child stack\n");
-        //WHy you do this? I was told to do so in the assignment :( 
-        IntStatus oldLevel = interrupt->SetLevel(IntOff); // disable interrupts
+        IntStatus oldLevel = interrupt->SetLevel(IntOff);
         scheduler->ReadyToRun(child);
-        (void) interrupt->SetLevel(oldLevel); // re-enable interrupts
-
-        //Well this thing apparently swithces back to user from kernel
-        //printf("Returning control to raw programs\n");
+        (void) interrupt->SetLevel(oldLevel); 
         
     }
     else if((which == SyscallException) && (type ==  SC_Exec)){
-        //I assume there is something called filename :(
-        //where do I find
-
-        //refer to line 130 above to know how to read from memory
         char filename[100];
         int i=0;
 
@@ -323,7 +283,6 @@ ExceptionHandler(ExceptionType which)
             machine->ReadMem(vaddr, 1, &memval);
         }
         filename[i]  = (char)memval;
-        // //This by far is weirdestthing that has been copied
 
         if (filename == NULL) {
           printf("Unable to open file %s\n", filename);
@@ -350,15 +309,12 @@ delete executable;
         machine->WriteRegister(NextPCReg, machine->ReadRegister(NextPCReg)+4);
         int i;
         
-        //RemoveChild function basically assigns the parent of all child to NULL and 
-        //assigns the ppid's of childs to be 0. i.e. attaches them to root.
         currentThread->ChildThreadPointer->RemoveChild();
         if(currentThread->parent!=NULL){
-        ////SetNull Takes a pid, removes it's thread pointer from the child list of his parent(ChildThreadPointer defined in thread.h). 
         currentThread->parent->ChildThreadPointer->SetNULL(currentThread->getPID());        
         currentThread->parent->Child_Status[currentThread->getPID()]=0;
         currentThread->parent->Child_ReturnValues[currentThread->getPID()]=machine->ReadRegister(4);
-        WaitingQueue->RemovePid(currentThread->getPID()); // Schedule Parent Process if waiting for this child to terminate.
+        WaitingQueue->RemovePid(currentThread->getPID()); 
       }
 
         currentThread->FinishThread();
@@ -378,7 +334,7 @@ delete executable;
         }
         else{
           currentThread->WaitingFor=pid;
-          WaitingQueue->SortedInsert((void *)currentThread, pid); // Insert currentthread to waiting queue as child not yet terminated.
+          WaitingQueue->SortedInsert((void *)currentThread, pid); 
           IntStatus oldlevel=interrupt->SetLevel(IntOff);
           currentThread->PutThreadToSleep();
           interrupt->SetLevel(oldlevel); 
