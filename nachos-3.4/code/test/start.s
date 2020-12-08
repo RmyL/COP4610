@@ -26,7 +26,7 @@
 __start:
 	jal	main
 	move	$4,$0		
-	jal	system_Exit	 /* if we return from main, exit(0) */
+	jal	Exit	 /* if we return from main, exit(0) */
 	.end __start
 
 /* -------------------------------------------------------------
@@ -42,181 +42,93 @@ __start:
  * -------------------------------------------------------------
  */
 
-	.globl system_Halt
-	.ent	system_Halt
-system_Halt:
-	addiu $2,$0,syscall_Halt
+	.globl Halt
+	.ent	Halt
+Halt:
+	addiu $2,$0,SC_Halt
 	syscall
 	j	$31
-	.end system_Halt
+	.end Halt
 
-	.globl system_Exit
-	.ent	system_Exit
-system_Exit:
-	addiu $2,$0,syscall_Exit
+	.globl Exit
+	.ent	Exit
+Exit:
+	addiu $2,$0,SC_Exit
 	syscall
 	j	$31
-	.end system_Exit
+	.end Exit
 
-	.globl system_Exec
-	.ent	system_Exec
-system_Exec:
-	addiu $2,$0,syscall_Exec
+	.globl Exec
+	.ent	Exec
+Exec:
+	addiu $2,$0,SC_Exec
 	syscall
 	j	$31
-	.end system_Exec
+	.end Exec
 
-	.globl system_Join
-	.ent	system_Join
-system_Join:
-	addiu $2,$0,syscall_Join
+	.globl Join
+	.ent	Join
+Join:
+	addiu $2,$0,SC_Join
 	syscall
 	j	$31
-	.end system_Join
+	.end Join
 
-	.globl system_Create
-	.ent	system_Create
-system_Create:
-	addiu $2,$0,syscall_Create
+	.globl Create
+	.ent	Create
+Create:
+	addiu $2,$0,SC_Create
 	syscall
 	j	$31
-	.end system_Create
+	.end Create
 
-	.globl system_Open
-	.ent	system_Open
-system_Open:
-	addiu $2,$0,syscall_Open
+	.globl Open
+	.ent	Open
+Open:
+	addiu $2,$0,SC_Open
 	syscall
 	j	$31
-	.end system_Open
+	.end Open
 
-	.globl system_Read
-	.ent	system_Read
-system_Read:
-	addiu $2,$0,syscall_Read
+	.globl Read
+	.ent	Read
+Read:
+	addiu $2,$0,SC_Read
 	syscall
 	j	$31
-	.end system_Read
+	.end Read
 
-	.globl system_Write
-	.ent	system_Write
-system_Write:
-	addiu $2,$0,syscall_Write
+	.globl Write
+	.ent	Write
+Write:
+	addiu $2,$0,SC_Write
 	syscall
 	j	$31
-	.end system_Write
+	.end Write
 
-	.globl system_Close
-	.ent	system_Close
-system_Close:
-	addiu $2,$0,syscall_Close
+	.globl Close
+	.ent	Close
+Close:
+	addiu $2,$0,SC_Close
 	syscall
 	j	$31
-	.end system_Close
+	.end Close
 
-	.globl system_Fork
-	.ent	system_Fork
-system_Fork:
-	addiu $2,$0,syscall_Fork
+	.globl Fork
+	.ent	Fork
+Fork:
+	addiu $2,$0,SC_Fork
 	syscall
 	j	$31
-	.end system_Fork
+	.end Fork
 
-	.globl system_Yield
-	.ent	system_Yield
-system_Yield:
-	addiu $2,$0,syscall_Yield
+	.globl Yield
+	.ent	Yield
+Yield:
+	addiu $2,$0,SC_Yield
 	syscall
 	j	$31
-	.end system_Yield
-
-	.globl system_PrintInt
-	.ent    system_PrintInt
-system_PrintInt:
-        addiu $2,$0,syscall_PrintInt
-        syscall
-        j       $31
-	.end system_PrintInt
-
-	.globl system_PrintChar
-	.ent    system_PrintChar
-system_PrintChar:
-        addiu $2,$0,syscall_PrintChar
-        syscall
-        j       $31
-	.end system_PrintChar
-
-	.globl system_PrintString
-	.ent    system_PrintString
-system_PrintString:
-        addiu $2,$0,syscall_PrintString
-        syscall
-        j       $31
-	.end system_PrintString
-
-	.globl system_GetReg
-	.ent    system_GetReg
-system_GetReg:
-	addiu $2,$0,syscall_GetReg
-	syscall
-	j       $31
-	.end system_GetReg
-
-	.globl system_GetPA
-	.ent    system_GetPA
-system_GetPA:
-	addiu $2,$0,syscall_GetPA
-	syscall
-	j       $31
-	.end system_GetPA
-
-	.globl system_GetPID
-	.ent    system_GetPID
-system_GetPID:
-	addiu $2,$0,syscall_GetPID
-	syscall
-	j       $31
-	.end system_GetPID
-
-	.globl system_GetPPID
-	.ent    system_GetPPID
-system_GetPPID:
-	addiu $2,$0,syscall_GetPPID
-	syscall
-	j       $31
-	.end system_GetPPID
-
-	.globl system_Sleep
-	.ent    system_Sleep
-system_Sleep:
-	addiu $2,$0,syscall_Sleep
-	syscall
-	j       $31
-	.end system_Sleep
-
-	.globl system_GetTime
-	.ent    system_GetTime
-system_GetTime:
-	addiu $2,$0,syscall_Time
-	syscall
-	j       $31
-	.end system_GetTime
-
-	.globl system_GetNumInstr
-	.ent    system_GetNumInstr
-system_GetNumInstr:
-	addiu $2,$0,syscall_NumInstr
-	syscall
-	j	$31
-	.end system_GetNumInstr
-
-	.globl system_PrintIntHex
-	.ent    system_PrintIntHex
-system_PrintIntHex:
-	addiu $2,$0,syscall_PrintIntHex
-	syscall
-	j	$31
-	.end system_PrintIntHex
+	.end Yield
 
 /* dummy function to keep gcc happy */
         .globl  __main
